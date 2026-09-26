@@ -169,6 +169,22 @@ decoded = json.loads(unquote(url.split("?q=", 1)[1]))
 check("q round-trips to the same query", decoded == q)
 check("sort included", decoded["sort"] == {"price": "asc"})
 
+# ---- Ctrl+C popup wiring (source-level: the sandbox can't render Qt) ------
+# The price popup's Trade button pre-fills ?q= from the cached stat map and
+# falls back to the plain search URL. c9db723 (stale-tree commit) dropped
+# that; pin it so it can't vanish again.
+_mw = open(os.path.join(os.path.dirname(os.path.dirname(
+    os.path.abspath(__file__))), "gui_overlay", "mirror_window.py"),
+    encoding="utf-8").read()
+_pop = _mw[_mw.find('QPushButton("Trade ↗")'):]
+_pop = _pop[:_pop.find("tb.clicked.connect")]
+check("popup Trade button pre-fills the query from the cached stat map",
+      "_trade_stats_index()" in _pop and "build_trade_query(info, idx)" in _pop
+      and "trade_query_url(qy, league)" in _pop)
+check("popup keeps the plain search URL as the fallback",
+      "trade_search_url(info, league)" in _pop
+      and _pop.find("trade_search_url") < _pop.find("_trade_stats_index"))
+
 print(f"RESULT: {PASS} passed, {FAIL} failed")
 print("ALL GREEN" if FAIL == 0 else "NOT GREEN")
 sys.exit(1 if FAIL else 0)
