@@ -23,6 +23,7 @@ banner for the HUMAN to act on, nothing more.
 """
 
 import difflib
+import os
 import re
 
 # The in-game search box truncates at 50 characters — a hard budget, not a
@@ -532,22 +533,69 @@ def frames_differ(sig_a, sig_b, bits=6):
     return bin(int(sig_a) ^ int(sig_b)).count("1") > int(bits)
 
 
+def _has_module(name):
+    """Is a module importable? find_spec only — never imports it."""
+    import importlib.util
+    try:
+        return importlib.util.find_spec(name) is not None
+    except Exception:
+        return False
+
+
+TESSERACT_INSTALL_URL = "https://github.com/UB-Mannheim/tesseract/wiki"
+
+
+def _tesseract_candidates():
+    """Where the Windows Tesseract installers put tesseract.exe."""
+    out = []
+    for base in (os.environ.get("ProgramFiles"),
+                 os.environ.get("ProgramFiles(x86)"),
+                 os.path.join(os.environ.get("LOCALAPPDATA") or "", "Programs")):
+        if base:
+            out.append(os.path.join(base, "Tesseract-OCR", "tesseract.exe"))
+    return out
+
+
+def find_tesseract(which=None, candidates=None):
+    """Path to the Tesseract ENGINE binary, or None. pytesseract is only a
+    wrapper: without the binary every call raises TesseractNotFoundError,
+    so the pip package alone must never count as 'OCR available'.
+    PATH first, then the standard install folders (the Windows installer
+    doesn't add itself to PATH). `which`/`candidates` are injectable for
+    tests."""
+    import shutil
+    which = which or shutil.which
+    try:
+        hit = which("tesseract")
+    except Exception:
+        hit = None
+    if hit:
+        return hit
+    for p in (candidates if candidates is not None
+              else _tesseract_candidates()):
+        try:
+            if p and os.path.isfile(p):
+                return p
+        except Exception:
+            pass
+    return None
+
+
 def available_ocr():
     """(engine_name|None, human message). Probe WITHOUT importing (the same
     find_spec pattern as voice_engine's Whisper): RapidOCR preferred, the
-    user's Tesseract install as fallback, neither -> feature off."""
-    import importlib.util
-
-    def _has(name):
-        try:
-            return importlib.util.find_spec(name) is not None
-        except Exception:
-            return False
-
-    if _has("rapidocr_onnxruntime"):
+    user's Tesseract install as fallback (pytesseract + Pillow AND the
+    tesseract binary), neither -> feature off with an install hint."""
+    if _has_module("rapidocr_onnxruntime"):
         return "rapidocr", "OCR: RapidOCR (onnxruntime)"
-    if _has("pytesseract") and _has("PIL"):
-        return "tesseract", "OCR: pytesseract"
+    if _has_module("pytesseract") and _has_module("PIL"):
+        exe = find_tesseract()
+        if exe:
+            return "tesseract", "OCR: pytesseract (Tesseract engine found)"
+        return None, ("OCR off — pytesseract is installed but the Tesseract "
+                      "engine (tesseract.exe) isn't: install it from "
+                      f"{TESSERACT_INSTALL_URL} (or pip install "
+                      "rapidocr-onnxruntime, no engine needed)")
     return None, ("OCR off — install one engine:  pip install "
                   "rapidocr-onnxruntime   (or pytesseract + Tesseract)")
 
@@ -572,9 +620,13 @@ def make_ocr():
             return "\n".join(str(r[1]) for r in (result or []))
         return _run
     if kind == "tesseract":
+        exe = find_tesseract()
+
         def _run(img):
             import pytesseract
             from PIL import Image
+            if exe:   # installed off-PATH (the Windows default) -> point at it
+                pytesseract.pytesseract.tesseract_cmd = exe
             try:
                 img = img[:, :, :3][:, :, ::-1]   # BGRA -> RGB
             except Exception:

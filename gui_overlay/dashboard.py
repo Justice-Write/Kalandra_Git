@@ -1699,17 +1699,24 @@ class ExchangeTab(QWidget):
             "Images (*.png *.jpg *.jpeg)")
         if not path:
             return
+        # Same shared OCR adapters as the snapshot scanners (RapidOCR, or
+        # pytesseract only when the Tesseract engine is really installed),
+        # so a missing engine is an install hint, never a raw exception.
         try:
-            import pytesseract
-            from PIL import Image
-        except Exception:
-            self.worth_lbl.setText(
-                "Screenshot scanning needs OCR: pip install pytesseract "
-                "pillow (plus the Tesseract engine — see Setup & "
-                "Dependencies).")
+            from core_engine.craft_hunter import available_ocr, make_ocr
+            kind, msg = available_ocr()
+        except Exception as e:
+            kind, msg = None, f"OCR unavailable: {e}"
+        if kind is None:
+            self.worth_lbl.setText(f"Screenshot scanning needs OCR. {msg}")
             return
         try:
-            text = pytesseract.image_to_string(Image.open(path))
+            import cv2
+            img = cv2.imread(path)
+            if img is None:
+                raise RuntimeError("couldn't read the image file")
+            ocr = make_ocr()
+            text = (ocr(img) or "") if ocr else ""
         except Exception as e:
             self.worth_lbl.setText(f"OCR failed: {e}")
             return

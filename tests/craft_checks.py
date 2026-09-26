@@ -274,6 +274,51 @@ check("tiny region rejected",
       make_grabber({"left": 0, "top": 0, "width": 4, "height": 4}) is None)
 guard("junk region fails soft", lambda: make_grabber({"left": "x"}))
 
+# ---- Tesseract: the pip wrapper alone is NOT an engine (W3-31/W3-33) --------
+import tempfile as _tf
+import core_engine.craft_hunter as _ch
+from core_engine.craft_hunter import find_tesseract
+
+check("find_tesseract: PATH hit wins",
+      find_tesseract(which=lambda n: r"C:\t\tesseract.exe",
+                     candidates=[]) == r"C:\t\tesseract.exe")
+with _tf.TemporaryDirectory() as _td:
+    _exe = os.path.join(_td, "tesseract.exe")
+    open(_exe, "wb").close()
+    check("find_tesseract: off-PATH install folder found",
+          find_tesseract(which=lambda n: None,
+                         candidates=[os.path.join(_td, "nope.exe"), _exe])
+          == _exe)
+check("find_tesseract: nothing anywhere -> None",
+      find_tesseract(which=lambda n: None, candidates=[]) is None)
+guard("find_tesseract: raising which fails soft",
+      lambda: find_tesseract(which=lambda n: 1 / 0, candidates=[None]))
+
+_orig_has, _orig_find = _ch._has_module, _ch.find_tesseract
+try:
+    _ch._has_module = lambda n: n in ("pytesseract", "PIL")
+    _ch.find_tesseract = lambda *a, **k: None
+    k2, m2 = _ch.available_ocr()
+    check("pytesseract without the binary -> OCR off (no crash later)",
+          k2 is None and "Tesseract" in m2 and "rapidocr" in m2)
+    check("make_ocr is None when the engine binary is missing",
+          _ch.make_ocr() is None)
+    _ch.find_tesseract = lambda *a, **k: r"C:\t\tesseract.exe"
+    check("pytesseract + binary -> tesseract engine",
+          _ch.available_ocr()[0] == "tesseract")
+    check("make_ocr returns a callable with the binary present",
+          callable(_ch.make_ocr()))
+    _ch._has_module = lambda n: n in ("rapidocr_onnxruntime", "pytesseract",
+                                      "PIL")
+    check("RapidOCR still preferred over Tesseract",
+          _ch.available_ocr()[0] == "rapidocr")
+    _ch._has_module = lambda n: False
+    check("nothing installed -> off with an install hint",
+          _ch.available_ocr()[0] is None
+          and "pip install" in _ch.available_ocr()[1])
+finally:
+    _ch._has_module, _ch.find_tesseract = _orig_has, _orig_find
+
 # ---- TooltipWatcher loop (CH-P2, fully injected) ----------------------------------------
 FRAME_MISS = b"\x10" * 4096
 FRAME_HIT = b"\xf0" * 2048 + b"\x00" * 2048

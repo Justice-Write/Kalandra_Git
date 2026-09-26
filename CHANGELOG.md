@@ -9,6 +9,28 @@ Repo: https://github.com/castleism/Kalandra_Git
 
 ## [Unreleased]
 
+### Fixed — 2026-09-26 snapshot scanner OCR: pytesseract without Tesseract degrades gracefully (W3-31 / W3-33)
+- **pytesseract alone no longer counts as an OCR engine.** It is only a
+  wrapper; without the Tesseract binary every scan raised
+  `TesseractNotFoundError`. `craft_hunter.available_ocr()` now also needs
+  the engine, found by the new `find_tesseract()` (PATH first, then the
+  standard `Tesseract-OCR` folders under Program Files / LocalAppData,
+  which the Windows installer doesn't add to PATH). When it's found
+  off-PATH, `make_ocr()` points `pytesseract.tesseract_cmd` at it.
+- With no engine, the Reserve tab's "Read snapshot", Price Check's
+  "Scan screenshot…" (photo scanner) and Craft Hunter all show
+  "OCR off — install the Tesseract engine from … (or pip install
+  rapidocr-onnxruntime)" instead of an exception. RapidOCR is still
+  preferred when installed.
+- The Exchange tab's currency-holdings screenshot scan called pytesseract
+  directly. It now uses the same shared adapters and gets the same hint.
+- ROADMAP: W3-31 → DONE. W3-33's OCR path is shipped, but its AI-vision
+  engine is flagged as regressed: c9db723 dropped `overlay.ai_image_reader`,
+  so scans are OCR-only for now.
+- Tests: `tests/craft_checks.py` 111 → 121 (PATH/off-PATH/none detection,
+  raising `which`, wrapper-without-binary → off, binary → engine, RapidOCR
+  preference, install hint).
+
 ### Added — 2026-09-26 Overlay transparency slider (Settings)
 - **Settings → "Overlay transparency"** (an everyday, always-visible row):
   35–100% opaque. The floor keeps the mirror findable. The value is stored
