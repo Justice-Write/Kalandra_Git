@@ -36,6 +36,10 @@ Repo: https://github.com/castleism/Kalandra_Git
 - Tests (source-level wiring pins so this can't regress silently again):
   `tests/photo_scan_checks.py` 28 → 32, `tests/craft_checks.py` 121 → 125,
   `tests/trade_query_checks.py` 35 → 37.
+- Also fixed while here: Settings → contained programs → "Pick the program
+  to contain" (`_pick_custom_exe`) raised `NameError` because `QFileDialog`
+  was never imported at module level (pyflakes caught it). Imported with the
+  other `PyQt6.QtWidgets` names.
 
 ### Changed — 2026-09-26 roadmap: two items marked BLOCKED with the missing decision
 - **W3-22 scheduled live searches**: blocked on a registered GGG OAuth

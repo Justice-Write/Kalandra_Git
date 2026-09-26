@@ -68,7 +68,7 @@ try:
         QApplication, QWidget, QMessageBox, QInputDialog, QDialog, QVBoxLayout,
         QHBoxLayout, QLabel, QLineEdit, QPushButton, QScrollArea, QFrame,
         QComboBox, QGridLayout, QListWidget, QListWidgetItem, QTextEdit,
-        QCheckBox
+        QCheckBox, QFileDialog
     )
     from PyQt6.QtCore import (Qt, QTimer, QPoint, QPointF, QRectF, QObject,
                               pyqtSignal, QUrl, QEvent)
