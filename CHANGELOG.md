@@ -9,6 +9,18 @@ Repo: https://github.com/castleism/Kalandra_Git
 
 ## [Unreleased]
 
+### Changed — 2026-09-26 roadmap: two items marked BLOCKED with the missing decision
+- **W3-22 scheduled live searches**: blocked on a registered GGG OAuth
+  client. Per `docs/GATING_RESEARCH.md` §3 this must run on per-user PKCE
+  with an X-Rate-Limit governor, not POESESSID or blind polling. Also
+  open: whether livesearch is in the sanctioned lane, and which channel
+  notifications use.
+- **Minimize-to-icon when a menu opens**: needs a design decision. The
+  overlay already hides while a menu is open, so nothing fights to stay on
+  top. What's undecided is which "icon" it should shrink to (taskbar
+  button, floating mini-orb, or tray icon) and what clicking it does while
+  a menu is still open.
+
 ### Fixed — 2026-09-26 snapshot scanner OCR: pytesseract without Tesseract degrades gracefully (W3-31 / W3-33)
 - **pytesseract alone no longer counts as an OCR engine.** It is only a
   wrapper; without the Tesseract binary every scan raised

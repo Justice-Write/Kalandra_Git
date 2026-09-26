@@ -105,7 +105,7 @@ diamonds), currency-orb iconography. Gorgeous, everywhere.
 |---|---|---|---|---|
 | W3-20 | **Ctrl+C price popup** (Exiled Exchange 2 / PoE Overlay style) | ✅ DONE 2026-07-03 — needs Christian's in-game test (checklist G1) | L | Shipped: Qt clipboard watcher (no hotkey lib needed — Windows notifies all clipboard changes), themed cursor-side card with parsed item, instant currency estimate (gear never fabricated), Trade ↗ + pre-filled Price Check button, 12s auto-dismiss/ESC, Settings toggle. |
 | W3-21 | Price Check tab: **intuitive interface** | ◑ v2 SHIPPED 2026-07-03 | M | Shipped: per-mod tier view + strategy verdict, AND the official trade site now embedded IN the tab (contained browser; "Open trade search" loads it right there). Remaining: push the parsed item's filters INTO the embedded site — route: build the trade query JSON (needs the site's stat-id map, fetchable from its /api/trade2/data/stats endpoint) and load `…/search/poe2/<league>?q=<json>`; fallback: inject via the web view's JS bridge. |
-| W3-22 | **Saved searches + scheduled live searches** | ◑ SAVED done 2026-07-03; scheduler TODO | M | Shipped: named saves (item + league) in Price Check with load/delete dropdown. Remaining: interval re-runs with new-listing notifications. |
+| W3-22 | **Saved searches + scheduled live searches** | ◑ SAVED done 2026-07-03; scheduler ⛔ BLOCKED 2026-09-26 | M | Shipped: named saves (item + league) in Price Check with load/delete dropdown. Remaining: interval re-runs with new-listing notifications. **Blocked on:** `docs/GATING_RESEARCH.md` §3 / action #5 says to build this only on a *registered* GGG OAuth client (PKCE, per-user) with a governor that obeys the X-Rate-Limit headers: no POESESSID, no blind interval polling. No client_id exists yet (registration is Christian's action #2, drafted in `docs/GGG_OAuth_Application_Letter.md`). Also undecided: whether the livesearch websocket is inside the sanctioned lane (ask GGG when registering) and which channel notifications use (orb bubble vs. the W4-08 desktop/email/SMS sender). |
 | W3-23 | **Pricing insight engine** | ◑ v1 SHIPPED 2026-07-03 | L | Shipped: heuristic mod-value tiers (which mods drive price / can be excluded / lower value) + strategy advice, wired into Price Check. Remaining: empirical with/without trade-result sampling and suggested listing price. |
 | W3-24 | Live Search tab: **embedded trade site** | ✅ DONE 2026-07-03 | M | Shipped: "Open here" loads the trade site in the tab (crash-safe lazy QWebEngineView); "Browser ↗" keeps the external path; graceful card when PyQt6-WebEngine is missing. Whisper/buy stays manual. |
 | W3-25 | Currency Exchange: **player currency tracker** (incl. gold) | ✅ DONE 2026-07-03 | M | Shipped: holdings grid (majors + Gold + Mirror), saved to config, live portfolio value in Exalted + Divine equivalents. History chart later. |
@@ -235,7 +235,14 @@ whisper, and click in game is the player's.
   `tests/ghost_checks.py` + `tests/settings_layout_checks.py`. Needs an
   on-Windows visual check.
 - **Minimize-to-icon** when a menu opens, so two windows aren't fighting to
-  stay on top.
+  stay on top. ⛔ BLOCKED 2026-09-26 (needs a design decision): the stated
+  problem is already solved, because the menu manager (`_present_menu`)
+  *hides* the overlay while any menu is open and brings it back when the
+  last one closes. What's undecided is what the "icon" is: (a) the
+  overlay's taskbar button (`showMinimized` instead of `hide`), (b) a small
+  floating mini-orb on screen that restores the overlay on click, or
+  (c) a system-tray icon. Also undecided: what clicking the icon does
+  while a menu is still open (restore on top, or close/park the menu).
 
 ## Under ToS review (build only with care)
 
