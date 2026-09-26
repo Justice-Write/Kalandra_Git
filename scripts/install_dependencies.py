@@ -14,6 +14,7 @@ Run this once (double-click "launchers/Install Dependencies.bat", or
         - Exiled Exchange 2    (PoE2 price-check overlay)
         - Xiletrade            (PoE1/2 overlay + price checker)
         - Lailloken Exile-UI   (PoE2 QoL overlay)
+        - PoE Overlay II Standalone (PoE2 overlay; opens its download page)
 
 Every GitHub download resolves the LATEST release at run time, so links never
 go stale. Everything is best-effort and logged; one item failing doesn't stop
@@ -347,6 +348,26 @@ def step_lailloken(cfg):
                         cfg, cfg_key="lailloken_ui")
 
 
+POE_OVERLAY2_URL = "https://www.poeoverlay.com/"
+
+
+def step_poe_overlay2(cfg):
+    # PoE Overlay II has no GitHub releases to resolve, so we never fetch its
+    # binary ourselves: open the official download page and let the player
+    # pick the Standalone (non-Overwolf) build. Kalandra's Settings can then
+    # hand price checks to it ("Price checker: PoE Overlay 2").
+    log("\n=== PoE Overlay II Standalone (PoE2 overlay + price checker) ===")
+    log(f"  Download the Standalone build from: {POE_OVERLAY2_URL}")
+    # Unattended runs (--all / --yes) just log the link — no surprise tabs.
+    if not AUTO_YES and _ask_yes("  Open the download page in your browser now?",
+                                 default=True):
+        try:
+            import webbrowser
+            webbrowser.open(POE_OVERLAY2_URL)
+        except Exception as e:
+            log(f"  Could not open a browser ({e}); visit the URL above.")
+
+
 def step_obsidian(cfg):
     # Obsidian is the app used to OPEN and explore Kalandra's knowledge vault.
     log("\n=== Obsidian (used to view Kalandra's knowledge database) ===")
@@ -391,6 +412,8 @@ COMPONENTS = [
      "Xiletrade — PoE1/2 overlay + price checker"),
     ("lailloken",   "apps",   False, step_lailloken,
      "Lailloken Exile-UI — PoE2 quality-of-life overlay"),
+    ("overlay2",    "apps",   False, step_poe_overlay2,
+     "PoE Overlay II Standalone — PoE2 overlay + price checker (opens its download page)"),
     ("obsidian",    "apps",   True,  step_obsidian,
      "Obsidian — views Kalandra's knowledge database (recommended)"),
 ]

@@ -48,7 +48,9 @@ copies, or links you to them. The installer can help you fetch and locate each.
   ascendancies). This is Kalandra's source of truth for grounding the AI.
 - **poe.ninja** — live economy/prices (used for currency/exchange features).
 - **Exiled Exchange 2 / Xiletrade** — price-check tools (integration links).
-- **PoE Overlay II Standalone** — companion overlay (integration planned).
+- **PoE Overlay II Standalone** — PoE2 overlay + price checker: listed under
+  Settings → Account linking → PoE2 Tools, selectable as the "Price checker",
+  and offered as a companion app by `launchers/Install Dependencies.bat`.
 - **NeverSink / FilterBlade** — loot filter management (embedded web tool).
 - **Craft of Exile** — crafting simulator (embedded web tool).
 - **Rhubarb Lip Sync** — drives the Orb's mouth movements when it speaks.
@@ -266,7 +268,6 @@ Ordered roughly by how close each is. ToS notes included where it matters.
   Kalandra Voice above needs no account at all.)
 - **DB status window** — double-click the sync medallion: shows the active
   database, last sync, whether poe2db has a newer patch, and a primary-source picker.
-- **PoE Overlay II Standalone** — add to the integrations list in setup/settings.
 
 **Character threads + orb identity:**
 - Each character gets a **manually-chosen orb** and its **own preserved chat

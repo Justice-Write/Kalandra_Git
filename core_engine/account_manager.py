@@ -36,6 +36,10 @@ SERVICES = {
                            "note": "Local tool. Wired via pob_bridge (codes + saved builds)."},
     "poe_overlay":        {"name": "PoE Overlay", "kind": "link",
                            "note": "Companion overlay integration."},
+    "poe_overlay2":       {"name": "PoE Overlay II (Standalone)", "kind": "link",
+                           "note": "PoE2 overlay + price checker (Standalone build, "
+                                   "not the Overwolf one). Pick it under 'Price "
+                                   "checker' to hand Ctrl+C checks to it."},
     "neversink":          {"name": "NeverSink FilterBlade", "kind": "link",
                            "note": "Loot filter management."},
     "exiled_exchange2":   {"name": "Exiled Exchange 2", "kind": "link",

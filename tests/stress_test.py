@@ -251,6 +251,19 @@ try:
     check("is_connected falsey without keyring", not am.is_connected("openai"))
     check("ai providers present", all(p in SERVICES for p in
           ["openai","anthropic","gemini","deepseek","mistral","xai"]))
+    # PoE Overlay II Standalone is in the integrations list (settings + setup).
+    check("PoE Overlay II is a link integration",
+          SERVICES.get("poe_overlay2", {}).get("kind") == "link")
+    _root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    _mw = open(os.path.join(_root, "gui_overlay", "mirror_window.py"),
+               encoding="utf-8").read()
+    check("PoE Overlay II has an Open-site URL + a Tools-section slot",
+          '"poe_overlay2":     "https://' in _mw
+          and '"poe_overlay2", "neversink"' in _mw)
+    _deps = open(os.path.join(_root, "scripts", "install_dependencies.py"),
+                 encoding="utf-8").read()
+    check("PoE Overlay II is a setup component",
+          '("overlay2",' in _deps and "step_poe_overlay2" in _deps)
 except Exception as e:
     print("account_manager err", e); traceback.print_exc()
 

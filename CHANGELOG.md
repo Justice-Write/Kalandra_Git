@@ -9,6 +9,20 @@ Repo: https://github.com/castleism/Kalandra_Git
 
 ## [Unreleased]
 
+### Added — 2026-09-26 PoE Overlay II Standalone in the integrations list
+- **Settings → Account linking → 🛠 PoE2 Tools** now has a
+  "PoE Overlay II (Standalone)" row with an Open-site button
+  (poeoverlay.com), next to the existing "Price checker: PoE Overlay 2"
+  option that hands Ctrl+C checks to it.
+- **Setup**: `scripts/install_dependencies.py` (Install Dependencies) offers
+  it as companion app `overlay2`. It has no GitHub releases to resolve, so
+  setup opens the official download page for the Standalone (non-Overwolf)
+  build instead of fetching a binary itself.
+- The `installer/Kalandra-Setup.ps1` wizard row is a follow-up (installer
+  changes trigger the installer build + public release).
+- Tests: 3 new `tests/stress_test.py` checks (service registry, Settings
+  slot + URL, setup component).
+
 ### Security — 2026-09-26 dependencies locked + audited (gating item)
 - **New `requirements-lock.txt`** — the exact dependency tree (76 packages)
   from a clean-venv `pip freeze` of `requirements.txt` on Windows /

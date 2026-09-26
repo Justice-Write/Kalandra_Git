@@ -203,7 +203,14 @@ whisper, and click in game is the player's.
    `tests/db_status_checks.py` (26). Re-lands the 2026-07-10 window that a
    later stale-tree commit (c9db723) dropped from `mirror_window.py`.
    Needs an on-Windows visual check.
-4. **PoE Overlay II Standalone** — add to the integrations list in setup/settings.
+4. **PoE Overlay II Standalone** — ✅ DONE 2026-09-26: Settings → Account
+   linking → 🛠 PoE2 Tools row ("PoE Overlay II (Standalone)", Open-site →
+   poeoverlay.com) alongside the existing "Price checker: PoE Overlay 2"
+   hand-off; setup component `overlay2` in `scripts/install_dependencies.py`
+   (opens the official download page — no GitHub releases to resolve, so
+   Kalandra never fetches the binary itself). Follow-up: a matching row in
+   the `installer/Kalandra-Setup.ps1` wizard (left out here because any
+   `installer/**` change triggers the installer build + public release).
 5. **Lock + audit dependencies** — ✅ DONE 2026-09-26 (see gating table).
 
 ## Mid-term
