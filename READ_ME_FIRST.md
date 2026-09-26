@@ -293,7 +293,6 @@ Ordered roughly by how close each is. ToS notes included where it matters.
   Reserve/BIS tracker; alert when you pick up items with the mods you want for
   expedition reforge.
 - **Temple planner.**
-- **Overlay transparency slider** (Settings).
 - **Minimize-to-icon** when a menu opens, so two windows aren't fighting to stay
   on top.
 

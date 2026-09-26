@@ -228,7 +228,12 @@ whisper, and click in game is the player's.
 - **Investment tracker** — currency invested per craft, alongside Reserve/BIS;
   alert on pickup of items matching wanted expedition-reforge mods.
 - **Temple planner.**
-- **Overlay transparency slider** (Settings).
+- **Overlay transparency slider** (Settings) — ✅ DONE 2026-09-26: everyday
+  row in Settings, 35–100% (floor so the overlay can't vanish), stored as
+  `overlay_opacity` and read on every paint; ghost mode's fade multiplies
+  on top. Re-lands the 2026-07-10 slider dropped by c9db723.
+  `tests/ghost_checks.py` + `tests/settings_layout_checks.py`. Needs an
+  on-Windows visual check.
 - **Minimize-to-icon** when a menu opens, so two windows aren't fighting to
   stay on top.
 

@@ -90,6 +90,13 @@ def main():
     check("voice row stays top-level", "root.addLayout(voice_row)" in bui)
     check("sync-speed row stays top-level", "root.addLayout(speed_row)" in bui)
     check("price-checker row stays top-level", "root.addLayout(pc_row)" in bui)
+    check("transparency slider row stays top-level",
+          "root.addLayout(op_row)" in bui and "self.opacity_slider" in bui)
+    check("slider floor is 35% (overlay never vanishes)",
+          "setRange(35, 100)" in bui)
+    oc = src_of(sdm.get("_on_opacity_change"), text)
+    check("slider writes overlay_opacity + saves",
+          'self.config["overlay_opacity"]' in oc and "save_config" in oc)
     # The set-once rows must live INSIDE the Oracle section now.
     check("API key row moved into Oracle section", "osec.addLayout(key_row)" in bui)
     check("budget row moved into Oracle section", "osec.addLayout(budget_row)" in bui)

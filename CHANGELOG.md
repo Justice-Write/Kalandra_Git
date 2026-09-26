@@ -9,6 +9,21 @@ Repo: https://github.com/castleism/Kalandra_Git
 
 ## [Unreleased]
 
+### Added — 2026-09-26 Overlay transparency slider (Settings)
+- **Settings → "Overlay transparency"** (an everyday, always-visible row):
+  35–100% opaque. The floor keeps the mirror findable. The value is stored
+  as `overlay_opacity` and the overlay reads it on every paint, so it takes
+  effect the moment the overlay is back on screen; it saves when the drag
+  ends.
+- Ghost mode (game focused) multiplies its fade on top of the slider value,
+  and Ctrl-to-interact returns to the slider value, not a fixed 97%.
+- This re-lands the 2026-07-10 slider that c9db723 (a commit made from a
+  stale copy of `mirror_window.py`) had dropped.
+- Tests: `tests/ghost_checks.py` 31 → 39 (slider drives both opacities,
+  fade multiplies, floor/ceiling clamps, junk-config safety, source lockstep)
+  and `tests/settings_layout_checks.py` 30 → 33 (row stays top-level, 35%
+  floor, writes + saves config).
+
 ### Added — 2026-09-26 PoE Overlay II Standalone in the integrations list
 - **Settings → Account linking → 🛠 PoE2 Tools** now has a
   "PoE Overlay II (Standalone)" row with an Open-site button

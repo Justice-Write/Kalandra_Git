@@ -991,6 +991,32 @@ if PYQT_AVAILABLE:
                 self.orb_hint.setWordWrap(True)
                 root.addWidget(self.orb_hint)
 
+            # --- Overlay transparency (everyday; stays top-level) ---
+            op_row = QHBoxLayout()
+            op_row.addWidget(QLabel("Overlay transparency:"))
+            from PyQt6.QtWidgets import QSlider
+            self.opacity_slider = QSlider(Qt.Orientation.Horizontal)
+            self.opacity_slider.setRange(35, 100)      # % opaque; 35 = floor
+            try:
+                cur_op = int(round(float(self.config.get("overlay_opacity",
+                                                         0.97)) * 100))
+            except Exception:
+                cur_op = 97
+            self.opacity_slider.setValue(min(max(cur_op, 35), 100))
+            self.opacity_slider.setToolTip(
+                "How solid the mirror overlay is (35% = most see-through, "
+                "100% = fully solid). Ghost mode still fades it further "
+                "while the game has focus. Takes effect the moment the "
+                "overlay is back on screen.")
+            self.opacity_slider.valueChanged.connect(self._on_opacity_change)
+            self.opacity_slider.sliderReleased.connect(
+                lambda: save_config(self.config))
+            op_row.addWidget(self.opacity_slider, 1)
+            self.opacity_lbl = QLabel(f"{self.opacity_slider.value()}%")
+            self.opacity_lbl.setStyleSheet("color:#9aa4b2;")
+            op_row.addWidget(self.opacity_lbl)
+            root.addLayout(op_row)
+
             # --- Scrollable body: Oracle setup, account linking (both
             #     collapsible), then the dashboard/custom tab pickers ---
             scroll = QScrollArea()
@@ -1141,6 +1167,16 @@ if PYQT_AVAILABLE:
         def _on_pc_change(self, _idx):
             self.config["price_checker"] = self.pc_combo.currentData() or "kalandra"
             save_config(self.config)
+
+        def _on_opacity_change(self, val):
+            # The overlay reads overlay_opacity from this SAME config dict on
+            # every paint. Save once the drag ends (sliderReleased) rather
+            # than on every tick; keyboard/wheel changes save immediately.
+            self.config["overlay_opacity"] = round(int(val) / 100.0, 2)
+            if hasattr(self, "opacity_lbl"):
+                self.opacity_lbl.setText(f"{int(val)}%")
+            if not self.opacity_slider.isSliderDown():
+                save_config(self.config)
 
         def _on_popup_toggle(self, _state):
             self.config["price_popup"] = self.popup_check.isChecked()
@@ -2952,19 +2988,31 @@ class KalandraOverlayApp(ParentClass):
                                              "and clickable again.")
             self.update()
 
+    def _base_opacity(self):
+        """The user's overlay-transparency setting (Settings slider), read
+        live from config so dragging the slider repaints immediately.
+        Clamped to a 35% floor — a 0% overlay is an unfindable overlay."""
+        try:   # junk config must never kill paintEvent
+            v = float(self.config.get("overlay_opacity",
+                                      self.opacity_multiplier))
+        except Exception:
+            v = self.opacity_multiplier
+        return min(max(v, 0.35), 1.0)
+
     def _ghost_opacities(self):
         """(frame_opacity, orb_opacity) for the current state. Ghosted: the
         frame is a whisper, the orb stays clearly visible. Ctrl override or
-        no game: both follow the normal multiplier."""
+        no game: both follow the user's base opacity (transparency slider);
+        the ghost fade multiplies on top of it."""
+        base = self._base_opacity()
         if self.game_mode and not self._ctrl_override:
             try:   # junk config must never kill paintEvent
                 fade = float(self.config.get("game_fade_frame", 0.15))
             except Exception:
                 fade = 0.15
             fade = min(max(fade, 0.0), 1.0)
-            return (self.opacity_multiplier * fade,
-                    self.opacity_multiplier * 0.92)
-        return self.opacity_multiplier, self.opacity_multiplier
+            return base * fade, base * 0.92
+        return base, base
 
     def _death_tick(self):
         """1s poll (W4-21): while the game runs, tail Client.txt; the

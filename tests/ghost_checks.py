@@ -80,17 +80,26 @@ class Sim:
         self.game_mode = False
         self._ctrl_override = False
 
+    def _base_opacity(self):
+        # keep in lockstep with mirror_window._base_opacity
+        try:
+            v = float(self.config.get("overlay_opacity",
+                                      self.opacity_multiplier))
+        except Exception:
+            v = self.opacity_multiplier
+        return min(max(v, 0.35), 1.0)
+
     def _ghost_opacities(self):
         # keep in lockstep with mirror_window._ghost_opacities
+        base = self._base_opacity()
         if self.game_mode and not self._ctrl_override:
             try:
                 fade = float(self.config.get("game_fade_frame", 0.15))
             except Exception:
                 fade = 0.15
             fade = min(max(fade, 0.0), 1.0)
-            return (self.opacity_multiplier * fade,
-                    self.opacity_multiplier * 0.92)
-        return self.opacity_multiplier, self.opacity_multiplier
+            return base * fade, base * 0.92
+        return base, base
 
 s = Sim()
 check("normal: frame==orb==multiplier", s._ghost_opacities() == (0.97, 0.97))
@@ -112,6 +121,34 @@ s.config["game_fade_frame"] = 99
 check("fade clamped to [0,1]", s._ghost_opacities()[0] <= 0.97)
 s.config["game_fade_frame"] = -3
 check("negative fade clamped to 0", s._ghost_opacities()[0] == 0.0)
+
+print("=== overlay transparency slider (config overlay_opacity) ===")
+t = Sim()
+t.config["overlay_opacity"] = 0.6
+check("slider value drives both opacities", t._ghost_opacities() == (0.6, 0.6))
+t.game_mode = True
+f, o = t._ghost_opacities()
+check("ghost fade multiplies the slider value",
+      abs(f - 0.6 * 0.15) < 1e-9 and abs(o - 0.6 * 0.92) < 1e-9)
+t.game_mode = False
+t.config["overlay_opacity"] = 0.05
+check("35% floor: overlay never vanishes", t._ghost_opacities()[0] == 0.35)
+t.config["overlay_opacity"] = 7
+check("clamped to 100%", t._ghost_opacities()[0] == 1.0)
+t.config["overlay_opacity"] = "junk"
+guard("junk opacity never crashes paint", t._ghost_opacities)
+check("junk opacity falls back to the default",
+      t._ghost_opacities()[0] == 0.97)
+_mw_src = open(os.path.join(os.path.dirname(os.path.dirname(
+    os.path.abspath(__file__))), "gui_overlay", "mirror_window.py"),
+    encoding="utf-8").read()
+check("real overlay has _base_opacity reading overlay_opacity",
+      "def _base_opacity(self)" in _mw_src
+      and 'self.config.get("overlay_opacity"' in _mw_src
+      and "min(max(v, 0.35), 1.0)" in _mw_src)
+check("real _ghost_opacities multiplies the base",
+      "base = self._base_opacity()" in _mw_src
+      and "return base * fade, base * 0.92" in _mw_src)
 
 def want_ct(game, ctrl, cfg=True):
     return game and not ctrl and cfg
