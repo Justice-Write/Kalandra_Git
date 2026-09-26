@@ -191,8 +191,16 @@ whisper, and click in game is the player's.
    only wakes transcription when it hears the phrase.
 2. **ElevenLabs voices** — premium cloud TTS alongside the free local voices
    (the zero-auth tier shipped 2026-07-12 as the Kalandra Voice, W4-33).
-3. **DB status window** — double-click the sync medallion: active database,
-   last sync, newer-patch check, primary-source picker.
+3. **DB status window** — ✅ SHIPPED 2026-09-26 (double-click the sync
+   medallion: active DB path/size, pages, last sync + age, **newer-patch
+   check** (local: newest patch-note version in the DB vs the data's patch
+   tag, plus a >14-day stale-sync warning — no network), per-patch and
+   per-source histograms, crawl frontier, primary-source picker editing the
+   same `sources_enabled` the sync worker honors, Sync-now button).
+   `database_handler.db_status` / `patch_freshness` are read-only;
+   `tests/db_status_checks.py` (26). Re-lands the 2026-07-10 window that a
+   later stale-tree commit (c9db723) dropped from `mirror_window.py`.
+   Needs an on-Windows visual check.
 4. **PoE Overlay II Standalone** — add to the integrations list in setup/settings.
 5. **Lock + audit dependencies** (quick win, see above).
 

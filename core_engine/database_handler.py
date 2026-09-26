@@ -311,6 +311,55 @@ def db_status(db_path):
             pass
     return out
 
+
+def default_db_path():
+    """Where the app's knowledge DB lives (honors config "dir_database")."""
+    try:
+        return os.path.join(KalandraDBHandler._configured_db_dir(),
+                            "localized_knowledge.db")
+    except Exception:
+        return os.path.join("data_engine", "localized_knowledge.db")
+
+
+def _patch_key(label):
+    """Sortable key for '0.5.4' / 'Patch 0.2.1c' labels; None if no version."""
+    import re as _re
+    m = _re.search(r"(\d+(?:\.\d+)+)([a-z]?)\b", str(label or ""))
+    if not m:
+        return None
+    key = [int(p) for p in m.group(1).split(".")]
+    if m.group(2):
+        key.append(ord(m.group(2)))
+    return tuple(key)
+
+
+def patch_freshness(status, patch_labels=(), now=None, stale_days=14):
+    """The DB status window's "newer patch?" check — local only, no network.
+
+    Compares the newest game_version_tag the stored data carries against the
+    newest patch the knowledge base has patch notes for (patch_labels, e.g.
+    from nerf_intel.patches_from_db), and flags a last sync older than
+    stale_days. Returns {data_patch, latest_patch, newer_patch, age_days,
+    stale}; every field degrades to None/False when unknown."""
+    data = [v for v in (status or {}).get("versions", {}) if _patch_key(v)]
+    known = [p for p in (patch_labels or ()) if _patch_key(p)]
+    data_patch = max(data, key=_patch_key) if data else None
+    latest = max(known, key=_patch_key) if known else None
+    newer = bool(data_patch and latest
+                 and _patch_key(latest) > _patch_key(data_patch))
+    age = None
+    last = (status or {}).get("last_scraped")
+    if last:
+        try:
+            ts = datetime.fromisoformat(str(last)[:19])
+            age = max(0.0, ((now or datetime.now()) - ts).total_seconds()
+                      / 86400.0)
+        except Exception:
+            age = None
+    return {"data_patch": data_patch, "latest_patch": latest,
+            "newer_patch": newer, "age_days": age,
+            "stale": age is not None and age > stale_days}
+
 # Interactive Self-Test Block
 if __name__ == "__main__":
     print("Testing Kalandra Database System...")

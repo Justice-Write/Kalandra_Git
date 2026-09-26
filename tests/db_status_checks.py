@@ -93,6 +93,50 @@ with tempfile.TemporaryDirectory() as td:
     db_status(db)
     check("read-only access", os.path.getmtime(db) == before)
 
+    # -- the window's wiring (source-level: the sandbox can't render Qt) ------
+    _mw = open(os.path.join(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__))), "gui_overlay", "mirror_window.py"),
+        encoding="utf-8").read()
+    check("sync medallion defers single-click (sync_click_timer)",
+          "self.sync_click_timer.start(250)" in _mw)
+    check("double-click on the sync medallion opens the DB window",
+          'bid == "TopCenter"' in _mw and "self.open_db_status()" in _mw)
+    check("DB window reads status + patch freshness",
+          "def open_db_status" in _mw and "patch_freshness(" in _mw)
+    check("DB window edits sources_enabled (the sync worker's config)",
+          _mw.count('"sources_enabled"') >= 2)
+
+# -- newer-patch check (local, no network) ------------------------------------
+from datetime import datetime
+from core_engine.database_handler import patch_freshness, default_db_path
+
+now = datetime(2026, 7, 20, 12, 0, 0)
+st = {"versions": {"Patch 0.5.4": 2, "Patch 0.5.3": 1},
+      "last_scraped": "2026-07-19T09:00:00"}
+pf = patch_freshness(st, ["0.5.3", "0.5.4", "0.5.10"], now=now)
+check("data patch is the newest tag", pf["data_patch"] == "Patch 0.5.4")
+check("latest patch sorts numerically (0.5.10 > 0.5.4)",
+      pf["latest_patch"] == "0.5.10")
+check("newer patch flagged", pf["newer_patch"] is True)
+check("fresh sync not stale", pf["stale"] is False
+      and 1.0 < pf["age_days"] < 1.2)
+pf2 = patch_freshness(st, ["0.5.4", "0.5.2"], now=now)
+check("same patch -> not newer", pf2["newer_patch"] is False)
+check("letter suffix sorts after base", patch_freshness(
+    {"versions": {"Patch 0.2.1": 1}}, ["0.2.1b"])["newer_patch"] is True)
+pf3 = patch_freshness({"versions": {}, "last_scraped": "2026-06-01T00:00:00"},
+                      [], now=now)
+check("unknown patches fail soft",
+      pf3["data_patch"] is None and pf3["latest_patch"] is None
+      and pf3["newer_patch"] is False)
+check("old sync is stale", pf3["stale"] is True)
+check("junk input fails soft", patch_freshness(
+    {"versions": {"???": 1}, "last_scraped": "not a date"},
+    [None, "x"])["age_days"] is None)
+check("empty status fails soft", patch_freshness(None)["stale"] is False)
+check("default db path ends in the knowledge db",
+      default_db_path().endswith("localized_knowledge.db"))
+
 print(f"RESULT: {PASS} passed, {FAIL} failed")
 print("ALL GREEN" if FAIL == 0 else "NOT GREEN")
 sys.exit(1 if FAIL else 0)

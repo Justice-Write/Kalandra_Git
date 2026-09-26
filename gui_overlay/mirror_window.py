@@ -2679,6 +2679,9 @@ class KalandraOverlayApp(ParentClass):
         self.char_click_timer = QTimer(self)         # char: single=picker, double=PoB tab
         self.char_click_timer.setSingleShot(True)
         self.char_click_timer.timeout.connect(self.execute_delayed_character)
+        self.sync_click_timer = QTimer(self)         # sync: single=sync, double=DB status
+        self.sync_click_timer.setSingleShot(True)
+        self.sync_click_timer.timeout.connect(self.execute_delayed_sync)
 
         # W3-20: watch the clipboard for in-game Ctrl+C item copies. Windows
         # notifies Qt of ALL clipboard changes, so this works while you play
@@ -3283,6 +3286,12 @@ class KalandraOverlayApp(ParentClass):
                 self._double_click_fired = True
                 self.open_dashboard_build()
                 event.accept()
+            elif bid == "TopCenter":
+                # Double-click the sync medallion -> the DB status window.
+                self.sync_click_timer.stop()
+                self._double_click_fired = True
+                self.open_db_status()
+                event.accept()
 
     def mouseMoveEvent(self, event):
         x = int(event.position().x())
@@ -3351,6 +3360,9 @@ class KalandraOverlayApp(ParentClass):
         elif bid == "TopRight":
             # Defer the character picker so a double-click can open the PoB tab.
             self.char_click_timer.start(250)
+        elif bid == "TopCenter":
+            # Defer the sync so a double-click can open the DB status window.
+            self.sync_click_timer.start(250)
         else:
             for btn in self.buttons:
                 if btn["id"] == bid and btn["callback"]:
@@ -3366,6 +3378,136 @@ class KalandraOverlayApp(ParentClass):
 
     def execute_delayed_character(self):
         self.select_active_character()
+
+    def execute_delayed_sync(self):
+        logger.log_event("SYSTEM", "Activated medallion button: DB Sync / Refresh Button")
+        self.trigger_database_scour_sync()
+
+    # ------------------------------------------------
+    # DB STATUS WINDOW (double-click the sync medallion)
+    # ------------------------------------------------
+    def open_db_status(self):
+        """Active database, last sync, newer-patch check and the primary-
+        source picker. The picker edits the SAME sources_enabled config the
+        sync worker honors. DB access is read-only (safe beside a running
+        WAL sync); the patch check is local — no network."""
+        try:
+            from core_engine.database_handler import (db_status,
+                                                      default_db_path,
+                                                      patch_freshness)
+            path = getattr(self.db, "db_path", None) or default_db_path()
+            st = db_status(path)
+            try:
+                from core_engine.nerf_intel import patches_from_db
+                labels = [lbl for lbl, _txt in patches_from_db(db_path=path)]
+            except Exception:
+                labels = []
+            fresh = patch_freshness(st, labels)
+        except Exception as e:
+            logger.log_event("SYSTEM", f"DB status unavailable: {e}")
+            path, st, fresh = "?", {"exists": False, "size_bytes": 0,
+                                    "pages": 0, "last_scraped": None,
+                                    "versions": {}, "sources": {},
+                                    "pending": {}}, {}
+        dlg = KalandraFrameDialog("DATABASE", None)
+        try:
+            from gui_overlay import theme as _t
+            v = dlg.body                      # the frame's QVBoxLayout
+            head = QLabel("Local knowledge base")
+            head.setStyleSheet(f"color:{_t.GOLD};font-size:16px;"
+                               "font-weight:bold;")
+            v.addWidget(head)
+            g = QGridLayout()
+            mb = st["size_bytes"] / (1024 * 1024.0)
+            last = (st["last_scraped"] or "never")[:19].replace("T", " ")
+            if fresh.get("age_days") is not None:
+                last += f"  ({fresh['age_days']:.0f} days ago)"
+            vers = ", ".join(f"{k} ({n:,})" for k, n in
+                             list(st["versions"].items())[:3]) or "—"
+            srcs = ", ".join(f"{k} ({n:,})" for k, n in sorted(
+                st["sources"].items(), key=lambda kv: -kv[1])[:4]) or "—"
+            pend = st.get("pending") or {}
+            if fresh.get("newer_patch"):
+                patch = (f"⚠ Patch {fresh['latest_patch']} notes are in the "
+                         f"DB but your data is tagged {fresh['data_patch']} — "
+                         "sync to refresh.")
+            elif fresh.get("stale"):
+                patch = ("⚠ Last sync is over two weeks old — a patch may "
+                         "have landed since; sync to be safe.")
+            elif fresh.get("data_patch"):
+                patch = (f"Up to date with the newest patch the DB knows "
+                         f"({fresh.get('latest_patch') or fresh['data_patch']})"
+                         ". Re-sync after every game patch.")
+            else:
+                patch = "Unknown — sync once to tag the data with a patch."
+            rows = [
+                ("Active database", path
+                 + ("" if st["exists"] else "  (missing!)")),
+                ("Pages stored", f"{st['pages']:,}  ({mb:,.1f} MB)"),
+                ("Last sync", last),
+                ("Newer patch?", patch),
+                ("Data tagged", vers),
+                ("Sources in DB", srcs),
+                ("Crawl frontier", f"{pend.get('queued', 0):,} queued · "
+                 f"{pend.get('error', 0):,} errored (retryable)"),
+            ]
+            for r, (k, val) in enumerate(rows):
+                kl = QLabel(k)
+                kl.setStyleSheet(f"color:{_t.MUTED};")
+                vl = QLabel(str(val))
+                vl.setWordWrap(True)
+                vl.setStyleSheet(f"color:{_t.TEXT};")
+                g.addWidget(kl, r, 0, Qt.AlignmentFlag.AlignTop)
+                g.addWidget(vl, r, 1)
+            g.setColumnStretch(1, 1)
+            v.addLayout(g)
+
+            pick = QLabel("Auto-sync sources (poe2db is the primary; the "
+                          "sync worker honors these):")
+            pick.setStyleSheet(f"color:{_t.GOLD};margin-top:8px;")
+            v.addWidget(pick)
+            enabled = self.config.get("sources_enabled")
+            if not isinstance(enabled, dict):
+                enabled = {}
+                self.config["sources_enabled"] = enabled
+            boxes = {}
+            for key, label, default in (
+                    ("poe2db", "poe2db.tw — primary game data", True),
+                    ("poe2wiki", "poe2wiki.net — secondary (slower, "
+                     "Cloudflare-throttled)", False),
+                    ("poe_ninja", "poe.ninja — economy snapshots", False)):
+                cb = QCheckBox(label)
+                cb.setChecked(bool(enabled.get(key, default)))
+                boxes[key] = cb
+                v.addWidget(cb)
+
+            def _save():
+                for k, cb in boxes.items():
+                    enabled[k] = bool(cb.isChecked())
+                save_config(self.config)
+
+            for cb in boxes.values():
+                cb.toggled.connect(lambda _c, s=_save: s())
+
+            brow = QHBoxLayout()
+            sync_btn = QPushButton("⟳ Sync now")
+            sync_btn.setProperty("gem", "sapphire")
+
+            def _sync_now():
+                dlg.close()
+                self.trigger_database_scour_sync()
+            sync_btn.clicked.connect(_sync_now)
+            brow.addWidget(sync_btn)
+            brow.addStretch()
+            close_btn = QPushButton("Close")
+            close_btn.clicked.connect(dlg.close)
+            brow.addWidget(close_btn)
+            v.addLayout(brow)
+            dlg.resize(640, 500)
+        except Exception as e:
+            logger.log_event("SYSTEM", f"DB status window failed: {e}")
+            return
+        self._present_menu(dlg)
 
     # ------------------------------------------------
     # MENU MANAGER — one menu at a time; the overlay steps aside while a

@@ -9,6 +9,26 @@ Repo: https://github.com/castleism/Kalandra_Git
 
 ## [Unreleased]
 
+### Added — 2026-09-26 DB status window (double-click the sync medallion)
+- The sync medallion has the same single/double-click split as its
+  siblings: single-click syncs (deferred 250 ms), double-click opens the
+  **Database window** — active DB path and size, pages stored, last sync
+  (with age), pages per game patch and per source, and the crawl frontier
+  (queued + errored-retryable), all from the read-only
+  `database_handler.db_status()` (`mode=ro`, safe beside a running sync).
+- **Newer-patch check** (new `database_handler.patch_freshness`): compares
+  the newest patch the knowledge base has patch notes for against the
+  patch tag on the stored data, and warns when the last sync is over two
+  weeks old. Local only — no network call.
+- **Primary-source picker**: poe2db / poe2wiki / poe.ninja checkboxes edit
+  the exact `sources_enabled` config the sync worker honors, plus a
+  Sync-now button.
+- This re-lands the 2026-07-10 window, which a later commit made from a
+  stale copy of `mirror_window.py` (c9db723) had silently dropped.
+- Tests: `tests/db_status_checks.py` 11 → 26 (patch ordering incl.
+  `0.5.10 > 0.5.4` and letter suffixes, stale detection, fail-soft on junk,
+  plus source-level wiring checks for the medallion + window).
+
 ### Added — 2026-07-12 Community Quest Board P1 (engine): gaps become quests, verify-before-close (W4-32)
 - **New `core_engine/quest_board.py`** — the local quest board. Knowledge-base
   gaps turn into visible quests the player completes with the tool itself:
