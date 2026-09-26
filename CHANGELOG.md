@@ -9,6 +9,34 @@ Repo: https://github.com/castleism/Kalandra_Git
 
 ## [Unreleased]
 
+### Fixed — 2026-09-26 restored features wiped by c9db723 (W3-33 / CH-P1 / W3-21)
+- This morning's sweep found that c9db723 (a commit made from a stale copy
+  of `mirror_window.py`) had silently dropped three working features
+  besides the slider and DB window already re-landed today. All three are
+  back, re-integrated against the current tree (the W4-00 provider seam,
+  OCR hardening and later dashboard changes are untouched):
+- **Photo scanner AI-vision reader (W3-33)**: `KalandraOverlayApp.
+  ai_image_reader(path, instruction)` is back (one blocking
+  `VoiceEngine.ai_read_image` call, `""` on any failure so the scanner
+  falls back to OCR) and the dashboard is built with
+  `ai_vision=self.ai_image_reader` again, so "Scan screenshot…" tries the
+  multimodal brain first instead of being OCR-only.
+- **Craft Hunter clipboard confirm (CH-P1 §3b)**: while a hunt is armed
+  (`craft_hunter.armed` + targets), every in-game Ctrl+C is evaluated with
+  `craft_hunter.evaluate_item` against the parsed mods; the verdict goes to
+  the cursor-side toast and the Craft Hunter tab and replaces the price
+  popup. No hunt / nothing to check / any error → the price popup behaves
+  exactly as before. Lives in the new `_craft_hunter_confirm()` helper.
+- **Ctrl+C price popup Trade button (W3-21)**: pre-fills the trade-site
+  `?q=` query from the dashboard's cached stat map
+  (`build_trade_query` + `trade_query_url`); plain `trade_search_url` when
+  the map isn't warm.
+- ROADMAP: W3-33 → DONE (both engines); W3-20 row notes the restored
+  pre-fill + hunt check. All three still need an on-Windows check.
+- Tests (source-level wiring pins so this can't regress silently again):
+  `tests/photo_scan_checks.py` 28 → 32, `tests/craft_checks.py` 121 → 125,
+  `tests/trade_query_checks.py` 35 → 37.
+
 ### Changed — 2026-09-26 roadmap: two items marked BLOCKED with the missing decision
 - **W3-22 scheduled live searches**: blocked on a registered GGG OAuth
   client. Per `docs/GATING_RESEARCH.md` §3 this must run on per-user PKCE
