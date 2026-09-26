@@ -9,6 +9,19 @@ Repo: https://github.com/castleism/Kalandra_Git
 
 ## [Unreleased]
 
+### Security — 2026-09-26 dependencies locked + audited (gating item)
+- **New `requirements-lock.txt`** — the exact dependency tree (76 packages)
+  from a clean-venv `pip freeze` of `requirements.txt` on Windows /
+  CPython 3.12. `requirements.txt` keeps its `>=` floors (so new Python
+  versions still get prebuilt wheels); the lock is the reproducible,
+  tested set: `pip install -r requirements-lock.txt`.
+- **pip-audit: no known vulnerabilities** in the locked set.
+- **New CI workflow `.github/workflows/dependency-audit.yml`** re-runs
+  `pip-audit -r requirements-lock.txt --disable-pip --no-deps` on every
+  change to either requirements file, weekly (new advisories land against
+  old pins), and on demand. It does not touch the installer build.
+- ROADMAP gating row "Pin & audit dependencies" flipped to DONE.
+
 ### Added — 2026-09-26 DB status window (double-click the sync medallion)
 - The sync medallion has the same single/double-click split as its
   siblings: single-click syncs (deferred 250 ms), double-click opens the

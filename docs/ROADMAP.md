@@ -24,17 +24,19 @@ and deliberately did not take.
 |---|---|---|---|
 | Remove plaintext secrets fallback (fail closed) | ✅ DONE | — | `account_manager` now stores only in the OS keychain; if keyring is missing, saving is disabled (no plaintext file). |
 | Visible recording indicator + consent | ✅ DONE | — | Red “● REC” while recording; one-time consent dialog before first capture. |
-| Pin & audit dependencies | ◑ PARTIAL | low | Add a committed `requirements-lock.txt` (exact versions) and run `pip-audit` in CI. Floors are set; full lock pending so 3.13 wheels keep resolving. |
+| Pin & audit dependencies | ✅ DONE 2026-09-26 | low | `requirements-lock.txt` committed (exact versions from a clean-venv freeze on Windows / CPython 3.12; `requirements.txt` keeps its `>=` floors so new Pythons still get wheels). `pip-audit`: no known vulnerabilities. `.github/workflows/dependency-audit.yml` re-audits the lock on every requirements change, weekly, and on demand. |
 | Code-sign the Windows build | ☐ TODO | med ($) | Requires an Authenticode cert (~$100–400/yr) + signing in the build pipeline. Removes SmartScreen warnings. |
 | Per-site ToS / licensing review | ☐ TODO | med (legal) | Especially: poe2wiki is **CC BY-NC** (non-commercial) — redistributing it in a paid product needs review/relicensing. Confirm poe2db, poe.ninja, Craft of Exile commercial terms. |
 | Privacy policy | ☐ TODO | low | State what's processed locally vs sent to the chosen AI provider. |
 | Sandboxed file writes | ◑ PARTIAL | low | All writes already go under `data_engine/`; formalize + document. |
 
-### How to do the dependency audit now (low-hanging)
+### Dependency audit / re-lock (how it's done)
 ```
 pip install pip-audit
-pip-audit -r requirements.txt
-pip freeze > requirements-lock.txt   # commit this for reproducible installs
+pip-audit -r requirements-lock.txt --disable-pip --no-deps   # what CI runs
+# re-lock after bumping a floor (on Windows — the lock has pywin32 etc.):
+python -m venv .lockenv && .lockenv\Scripts\pip install -r requirements.txt
+.lockenv\Scripts\pip freeze > requirements-lock.txt   # then re-add the header
 ```
 
 ## Shipped
@@ -202,7 +204,7 @@ whisper, and click in game is the player's.
    later stale-tree commit (c9db723) dropped from `mirror_window.py`.
    Needs an on-Windows visual check.
 4. **PoE Overlay II Standalone** — add to the integrations list in setup/settings.
-5. **Lock + audit dependencies** (quick win, see above).
+5. **Lock + audit dependencies** — ✅ DONE 2026-09-26 (see gating table).
 
 ## Mid-term
 
@@ -253,7 +255,7 @@ whisper, and click in game is the player's.
   unavailable, saving is refused rather than written to a file. Fail closed.
 - **Hard-pinning (`==`) dependencies in requirements.txt** — rejected. Pins to
   old versions force source builds needing a C++ toolchain most users don't
-  have. `>=` floors + a committed lock file (pending) instead.
+  have. `>=` floors + a committed lock file (`requirements-lock.txt`) instead.
 - **lxml for scraping** — rejected in favor of Python's built-in HTML parser;
   avoids a native build dependency for a marginal speed gain.
 - **Reading the user's AI-provider account balance** — impossible, not just

@@ -2,6 +2,7 @@
 # NOTE: versions are intentionally left as ">=" floors (not "==") so pip installs
 # prebuilt wheels for your Python version (incl. Python 3.13). Hard-pinning old
 # versions forces a source build, which needs a C++ compiler you may not have.
+# For the exact, audited set that was tested, use requirements-lock.txt.
 #
 # If a heavy optional package ever fails, install in the three groups below
 # separately -- the overlay launches fine with just the CORE group; each feature
