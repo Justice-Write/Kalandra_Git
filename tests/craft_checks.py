@@ -384,6 +384,25 @@ s2 = mod_suggestions("/definitely/not/a/real/path.db")
 check("missing DB fails soft to builtins", s2[:len(BUILTIN_MOD_LINES)]
       == list(BUILTIN_MOD_LINES))
 
+# ---- overlay wiring (source-level: the sandbox can't render Qt) -----------
+# CH-P1 §3b: while a hunt is armed, the in-game Ctrl+C the price popup already
+# watches is the authoritative target check. c9db723 (stale-tree commit)
+# dropped this from the clipboard watcher; pin it so it can't vanish again.
+_mw = open(os.path.join(os.path.dirname(os.path.dirname(
+    os.path.abspath(__file__))), "gui_overlay", "mirror_window.py"),
+    encoding="utf-8").read()
+_watch = _mw[_mw.find("def _on_clipboard_item"):_mw.find("def _econ_rows")]
+check("clipboard watcher runs the armed-hunt check before the price popup",
+      "self._craft_hunter_confirm(info, txt)" in _watch
+      and _watch.find("_craft_hunter_confirm") < _watch.find("_show_price_popup"))
+check("hunt confirm gates on craft_hunter.armed + targets",
+      'hcfg.get("armed") and hcfg.get("targets")' in _mw)
+check("hunt confirm uses core_engine.craft_hunter.evaluate_item",
+      "from core_engine.craft_hunter import evaluate_item" in _mw
+      and "evaluate_item(hcfg.get(\"targets\")" in _mw)
+check("hunt verdict -> cursor toast + Craft Hunter tab",
+      "show_hunt_toast(res)" in _mw and "d.notify_craft_confirm(res, txt)" in _mw)
+
 print(f"RESULT: {PASS} passed, {FAIL} failed")
 print("ALL GREEN" if FAIL == 0 else "NOT GREEN")
 sys.exit(1 if FAIL else 0)

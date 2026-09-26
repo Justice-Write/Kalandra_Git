@@ -3643,9 +3643,54 @@ class KalandraOverlayApp(ParentClass):
         self._clip_ts = now
         if not info:
             return                      # not a PoE item copy (or unparsable)
+
+        # CH-P1 (docs/CRAFT_HUNTER_SPEC.md §3b): while a hunt is armed, this
+        # same game-written clipboard text is the AUTHORITATIVE target check.
+        # Verdict goes to a cursor-side toast + the Craft Hunter tab; while
+        # hunting, the confirm replaces the price popup (you're spamming
+        # orbs, not pricing). Same compliance line as W3-20: read-only —
+        # Kalandra shows a verdict, the human does every action.
+        if self._craft_hunter_confirm(info, txt):
+            return
+
         logger.log_event("TRADE", f"Item copied in game: "
                          f"{info.get('name') or info.get('base')}")
         self._show_price_popup(info, txt)
+
+    def _craft_hunter_confirm(self, info, txt):
+        """Run an armed Craft Hunter's target check on a copied item.
+        Returns True when a verdict was shown (so the caller skips the price
+        popup); False when no hunt is armed / nothing to check / any error,
+        so the price popup behaves exactly as before."""
+        try:
+            hcfg = self.config.get("craft_hunter") or {}
+            if not (hcfg.get("armed") and hcfg.get("targets")):
+                return False
+            from core_engine.craft_hunter import evaluate_item
+            res = evaluate_item(hcfg.get("targets"),
+                                info.get("mods") or [],
+                                mode=hcfg.get("mode", "any"))
+            if not res.get("checked"):
+                return False
+            logger.log_event(
+                "CRAFT",
+                ("TARGET HIT — stop crafting! " if res.get("hit")
+                 else "no target hit — keep going ")
+                + f"({info.get('name') or info.get('base')})")
+            try:
+                from gui_overlay.craft_hunter import show_hunt_toast
+                show_hunt_toast(res)
+            except Exception:
+                pass
+            d = getattr(self, "_dashboard", None)
+            if d is not None:
+                try:
+                    d.notify_craft_confirm(res, txt)
+                except Exception:
+                    pass
+            return True
+        except Exception:
+            return False
 
     def _econ_rows(self):
         """Cached poe.ninja rows for instant currency estimates (6h TTL).
