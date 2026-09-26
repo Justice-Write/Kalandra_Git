@@ -4786,6 +4786,19 @@ class KalandraOverlayApp(ParentClass):
             view["jewels"] = full.get("jewels", []) or []
         return view
 
+    def ai_image_reader(self, path, instruction):
+        """Synchronous AI-vision read for the photo item scanner (W3-33).
+        Callers already run their own worker thread (same convention as
+        ai_respond); this makes one blocking network call and returns ""
+        on any failure so the caller falls back to offline OCR."""
+        if not self.voice:
+            return ""
+        try:
+            return self.voice.ai_read_image(path, instruction) or ""
+        except Exception as e:
+            self.signals.log.emit("VOICE", f"AI vision read failed: {e}")
+            return ""
+
     def open_dashboard(self):
         """Open the single-pane dashboard window (kept referenced so it persists)."""
         try:
@@ -4794,7 +4807,7 @@ class KalandraOverlayApp(ParentClass):
                 self._dashboard = KalandraDashboard(
                     config=self.config, pob_sim=self.pob_sim, accounts=self.accounts,
                     issues=self.issues, build_provider=self.current_build_view,
-                    ask_ai=self.ask_ai_text,
+                    ask_ai=self.ask_ai_text, ai_vision=self.ai_image_reader,
                     on_build_saved=self.load_build_from_file)
             self._present_menu(self._dashboard)
             return self._dashboard

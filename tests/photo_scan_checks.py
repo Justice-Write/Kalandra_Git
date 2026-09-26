@@ -170,6 +170,25 @@ finally:
 # ---- sanity: photo_scanner never imports Qt or opens a socket at import --
 guard("module import has no side effects", lambda: __import__("core_engine.photo_scanner"))
 
+# ---- GUI wiring (source-level: the sandbox can't render Qt) ---------------
+# c9db723 (a commit made from a stale tree) dropped overlay.ai_image_reader
+# and built the dashboard without ai_vision=, which silently made every
+# scan OCR-only. Keep the wiring pinned so it can't vanish again.
+_mw = open(os.path.join(os.path.dirname(os.path.dirname(
+    os.path.abspath(__file__))), "gui_overlay", "mirror_window.py"),
+    encoding="utf-8").read()
+check("overlay defines ai_image_reader(path, instruction)",
+      "def ai_image_reader(self, path, instruction):" in _mw)
+check("ai_image_reader delegates to VoiceEngine.ai_read_image",
+      "self.voice.ai_read_image(path, instruction)" in _mw)
+check("dashboard is built with ai_vision=overlay.ai_image_reader",
+      "ai_vision=self.ai_image_reader" in _mw)
+_dash = open(os.path.join(os.path.dirname(os.path.dirname(
+    os.path.abspath(__file__))), "gui_overlay", "dashboard.py"),
+    encoding="utf-8").read()
+check("dashboard hands ai_vision to scan_item_photo",
+      "scan_item_photo(path, ai_vision=self.ai_vision)" in _dash)
+
 print(f"\nphoto_scan_checks: {PASS} passed, {FAIL} failed")
 if FAIL:
     sys.exit(1)
