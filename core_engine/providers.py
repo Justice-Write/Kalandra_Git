@@ -80,6 +80,12 @@ class GameDataProvider(Provider):
     def search(self, term, limit=5):
         """-> list of text snippets (possibly empty)."""
 
+    def refresh_quests(self, board):
+        raise NotImplementedError("This game-data provider does not expose quest gaps")
+
+    def close_quest(self, board, quest_id):
+        raise NotImplementedError("This game-data provider cannot verify resolved gaps")
+
 
 class CaptureProvider(Provider):
     """Recording/replay. Today: built-in recorder; OBS websocket is W4-10."""
@@ -201,6 +207,22 @@ class LocalCraftPlanner(CraftSimulator):
 
 
 class ScrapedGameData(GameDataProvider):
+    def refresh_quests(self, board):
+        from core_engine.database_handler import KalandraDBHandler
+        db = KalandraDBHandler()
+        try:
+            return board.generate_from_db(db)
+        finally:
+            db.close()
+
+    def close_quest(self, board, quest_id):
+        from core_engine.database_handler import KalandraDBHandler
+        db = KalandraDBHandler()
+        try:
+            return board.close(quest_id, db)
+        finally:
+            db.close()
+
     def search(self, term, limit=5):
         """LIKE search over the knowledge_ledger (same table the RAG uses)."""
         t = str(term or "").strip()

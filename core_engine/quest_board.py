@@ -83,16 +83,14 @@ class QuestBoard:
 
     # -- storage (ship-safe JSON overlay) ---------------------------------------
     def _load(self):
-        try:
-            if os.path.exists(self.path):
-                with open(self.path, "r", encoding="utf-8") as f:
-                    data = json.load(f)
-                if isinstance(data, list):
-                    self._items = data
-                    return
-        except Exception:
-            pass
-        self._items = []
+        if not os.path.exists(self.path):
+            self._items = []
+            return
+        with open(self.path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if not isinstance(data, list) or not all(isinstance(row, dict) for row in data):
+            raise ValueError("Invalid local community data; preserve and repair " + self.path)
+        self._items = data
 
     def _save(self):
         try:
@@ -102,7 +100,9 @@ class QuestBoard:
                 json.dump(self._items, f, indent=2, ensure_ascii=False)
             os.replace(tmp, self.path)
         except Exception:
-            pass
+            # Reload the durable state; do not report an in-memory edit as saved.
+            self._load()
+            raise
 
     def _get(self, qid):
         for q in self._items:

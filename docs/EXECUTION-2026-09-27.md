@@ -37,8 +37,27 @@ Commands: `.venv/Scripts/python tests/desktop_runtime_checks.py`, each
 - Signing, commercial source licensing and final art are owner/external gates.
 - The broader roadmap remains open: sim-verified upgrades, interactive character
   sheet, filter grouping/reorder, video analyzer, PoB/character workflows, advisor
-  weighted tree/BIS/meta mining, community-tag/quest-board UI, installer add-on modes,
+  weighted tree/BIS/meta mining, installer add-on modes,
   transcription/highlights and remaining mid-term features are **unfinished**, not
   falsely classified as externally blocked. This regression pass does not complete
   those features or authorize sale, publication or installation.
 
+
+## Local Quest Board follow-through
+
+Added the dashboard pane with status/type/text filters, claims, evidence, trusted
+maintainer signoff, verified close, source links and contributor credits. Tag
+suggestions are visibly unverified. Names are local attribution, not authenticated
+community identities. Gap generation and closure use the game-data provider seam.
+Corrupt JSON stores fail visibly without replacement; failed writes restore the
+durable in-memory state rather than reporting phantom success. Shared/synced
+moderation and automatic patch/meta quests remain unfinished.
+
+`tests/quest_board_ui_checks.py`: 7/7 on native Windows Qt, isolated temporary
+stores, no real user database writes. Covers distinct contributors, rejected
+untrusted signoff, verified-only closure, filtering/source schemes, suggestions,
+provider connection cleanup, corruption and failed saves. Native screenshot
+`%TEMP%/kalandra-quest-runtime.png` inspected: readable controls and evidence.
+Relevant engine suites remain green: quests 33, community tags 28, provider 49,
+settings 33; stress rerun 293/293. Cross-file quest/tag storage is not a single
+transaction; this UI does not introduce distributed verification or sync.

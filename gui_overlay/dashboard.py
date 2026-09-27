@@ -2669,6 +2669,7 @@ DASHBOARD_TABS = [
     ("PoE Overlay 2", False),
     ("Reserve / BIS", True),
     ("Issues / Changelog", True),
+    ("Quest Board", True),
     ("Price Check", True),
     ("Trade Site", True),
     ("Exchange", True),
@@ -2694,7 +2695,7 @@ TAB_GROUPS = [
                              "Exchange", "Reserve / BIS", "poe.ninja"]),
     ("🔨 Crafting", ["Crafting", "Craft Hunter", "Craft of Exile"]),
     ("📊 Loot & Filters", ["Filter Editor", "FilterBlade", "Grind Tracker"]),
-    ("🛠 Other", []),
+    ("🛠 Other", ["Quest Board"]),
 ]
 _GROUP_OF = {lbl: g for g, lbls in TAB_GROUPS for lbl in lbls}
 _GROUP_ORDER = [g for g, _ in TAB_GROUPS]
@@ -2900,6 +2901,12 @@ class KalandraDashboard(KalandraFrameWindow):
             except Exception as e:
                 self.tabs.addTab(_placeholder("Issues / Changelog", [f"Issues unavailable: {e}"]),
                                  "Issues / Changelog")
+        if self._tab_on("Quest Board"):
+            try:
+                from gui_overlay.quest_board import QuestBoardTab
+                self.tabs.addTab(QuestBoardTab(config=self.config), "Quest Board")
+            except Exception as e:
+                self.tabs.addTab(_placeholder("Quest Board", [f"Unavailable: {e}"]), "Quest Board")
         if self._tab_on("Price Check"):
             try:
                 self._price_tab = PriceCheckTab(config=self.config,

@@ -75,6 +75,7 @@ Practical rules for every contributor (human or routine):
 | Player events (deaths, zones) | `Client.txt` tail (`death_review`) | *(needs seam)* | Game event stream |
 | Video capture | OBS websocket / mss (`obs_bridge`, `media_recorder`) | `Capture` | Engine-side replay/capture API |
 | Patch intel | patch-note pages in the ledger (`nerf_intel`) | `GameData` | Structured patch diffs from the source |
+| Local quest gaps and resolved-gap checks | knowledge ledger via `ScrapedGameData.refresh_quests` / `close_quest` | `GameDataProvider` (optional capabilities) | Structured game-file/official metadata; shared board still requires moderation design |
 | Character list / identity | PoB's own account import + `poe_account.get_characters` (404 on PoE2 today) + public ladder (`docs/CHARACTER_IMPORT_SPEC.md`) | *(needs seam — candidate: `AccountData`)* | Official character API — `oauth_pkce.py` is pre-built, waiting on a client_id |
 
 *(needs seam)* rows are the current priority for the provider-boundary
