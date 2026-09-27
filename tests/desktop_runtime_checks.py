@@ -7,6 +7,7 @@ physical-display placement, native picker appearance or live OCR quality.
 import os
 import sys
 import types
+import tempfile
 import unittest
 from unittest.mock import Mock, patch
 
@@ -25,6 +26,7 @@ class DesktopRuntimeTests(unittest.TestCase):
              patch.object(m.QFileDialog, 'getOpenFileName', return_value=('C:/Apps/fixture.exe', '')) as picker:
             dialog = m.SettingsDialog(None, {}, voices=[])
             dialog.show(); APP.processEvents()
+            dialog.grab().save(os.path.join(tempfile.gettempdir(), 'kalandra-settings-runtime.png'))
             button = next(b for b in dialog.findChildren(QPushButton) if b.text().startswith('Pick'))
             button.click()
             picker.assert_called_once()

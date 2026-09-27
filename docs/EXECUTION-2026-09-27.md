@@ -7,6 +7,11 @@ fixes are preserved. No default-branch merge or installation was performed.
 ## Verified
 
 `tests/desktop_runtime_checks.py`: **5/5**, real PyQt6 widgets in offscreen mode:
+Also rerun on the native Windows Qt platform: 5/5. The Settings capture was
+visually inspected: readable text and complete main controls. Offscreen Qt had
+missing font glyphs; native Windows rendering corrected those. Capture:
+`%TEMP%/kalandra-settings-runtime.png`.
+
 Settings construction and connected picker button, picker selection/cancellation,
 scanner AI reader/failure fallback, armed clipboard verdict and price routing,
 Trade button prefilled query and no-map fallback. API, game and native picker
