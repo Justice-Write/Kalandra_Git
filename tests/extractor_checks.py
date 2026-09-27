@@ -17,6 +17,7 @@ import struct
 import sys
 import tempfile
 import shutil
+from unittest.mock import patch
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, ROOT)
@@ -258,7 +259,9 @@ try:
     with open(os.path.join(bundles_dir, "_.index.bin"), "wb") as f:
         f.write(wrap_bundle(bytes(index_blob)))
 
-    ex = OodleExtractor(install_dir=tmpdir)
+    # Never recursively scan the machine's TEMP parent for proprietary DLLs.
+    with patch('core_engine.oodle_extractor.find_oo2core', return_value=None):
+        ex = OodleExtractor(install_dir=tmpdir)
     ex._oodle_decompress = identity_decompress   # stub the DLL-only codec
 
     stats = ex.build_index()
@@ -286,7 +289,9 @@ finally:
 # Force the "not found" branch directly (rather than relying on find_install
 # failing) so this stays deterministic on a machine that DOES have a real
 # PoE2 install under one of the default candidate paths.
-ex2 = OodleExtractor(install_dir=None)
+with patch('core_engine.oodle_extractor.find_install', return_value=None), \
+     patch('core_engine.oodle_extractor.find_oo2core', return_value=None):
+    ex2 = OodleExtractor(install_dir=None)
 ex2.install = None
 guard("self_test on missing install doesn't crash", ex2.self_test)
 rep = ex2.self_test()

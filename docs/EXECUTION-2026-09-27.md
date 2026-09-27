@@ -1,0 +1,39 @@
+# Desktop execution — 2026-09-27
+
+The refreshed evening branch is five commits ahead of origin/main with main an
+ancestor. Existing scanner, armed-hunt clipboard, trade query and QFileDialog
+fixes are preserved. No default-branch merge or installation was performed.
+
+## Verified
+
+`tests/desktop_runtime_checks.py`: **5/5**, real PyQt6 widgets in offscreen mode:
+Settings construction and connected picker button, picker selection/cancellation,
+scanner AI reader/failure fallback, armed clipboard verdict and price routing,
+Trade button prefilled query and no-map fallback. API, game and native picker
+services are mocked; no account/config writes or game input occur.
+
+All 17 pre-existing `*checks.py` suites passed (761 checks), plus stress_test.py
+293/293. Extractor fixture initially hung recursively searching the host TEMP
+parent for an Oodle DLL. Stopped only that test process, mocked host discovery in
+the synthetic fixture, and reran: 42/42 passed. This prevents machine-dependent
+fixture scans; it does not assert the proprietary codec was tested.
+
+Commands: `.venv/Scripts/python tests/desktop_runtime_checks.py`, each
+`tests/*checks.py`, and `.venv/Scripts/python tests/stress_test.py`.
+
+## Remaining dependencies and scope
+
+- Physical-display placement, actual native file picker, real screenshot OCR,
+  live game clipboard and visual opacity/DB-window acceptance remain unverified.
+  Smallest action: run these flows with an owner-selected game capture on Windows.
+- Scheduled search still needs the registered GGG OAuth client and sanctioned
+  polling/websocket decision recorded in GATING_RESEARCH; no credentials fabricated.
+- Minimize-to-icon still needs the exact icon/restore behavior decision in ROADMAP.
+- Signing, commercial source licensing and final art are owner/external gates.
+- The broader roadmap remains open: sim-verified upgrades, interactive character
+  sheet, filter grouping/reorder, video analyzer, PoB/character workflows, advisor
+  weighted tree/BIS/meta mining, community-tag/quest-board UI, installer add-on modes,
+  transcription/highlights and remaining mid-term features are **unfinished**, not
+  falsely classified as externally blocked. This regression pass does not complete
+  those features or authorize sale, publication or installation.
+
