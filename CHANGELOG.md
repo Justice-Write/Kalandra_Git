@@ -9,6 +9,19 @@ Repo: https://github.com/castleism/Kalandra_Git
 
 ## [Unreleased]
 
+### Added — 2026-10-04 privacy policy + sandboxed-writes boundary (ROADMAP gating L28/L29)
+- `docs/PRIVACY.md` refreshed against the code: per-provider endpoint table,
+  exact request payload (system prompt + question + ≤12 local snippets,
+  45 s timeout), the one image-sending feature (Photo Scanner AI-vision
+  reader), retention, and how to run with no AI key at all.
+- `docs/SANDBOXED-WRITES.md`: the `data_engine/` write boundary — allowed
+  roots and how they are anchored, the `dir_database` override, the
+  user-pointed exceptions (Filter Editor `.bak`, Obsidian vault), and an
+  honest note that there is no runtime path guard yet.
+- `tests/sandbox_write_checks.py`: asserts every declared write root
+  resolves under `<project>/data_engine/` (with negative controls).
+- ROADMAP gating rows "Privacy policy" and "Sandboxed file writes" → DONE.
+
 ### Fixed — 2026-09-26 restored features wiped by c9db723 (W3-33 / CH-P1 / W3-21)
 - This morning's sweep found that c9db723 (a commit made from a stale copy
   of `mirror_window.py`) had silently dropped three working features

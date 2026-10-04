@@ -27,8 +27,8 @@ and deliberately did not take.
 | Pin & audit dependencies | ✅ DONE 2026-09-26 | low | `requirements-lock.txt` committed (exact versions from a clean-venv freeze on Windows / CPython 3.12; `requirements.txt` keeps its `>=` floors so new Pythons still get wheels). `pip-audit`: no known vulnerabilities. `.github/workflows/dependency-audit.yml` re-audits the lock on every requirements change, weekly, and on demand. |
 | Code-sign the Windows build | ☐ TODO | med ($) | Requires an Authenticode cert (~$100–400/yr) + signing in the build pipeline. Removes SmartScreen warnings. |
 | Per-site ToS / licensing review | ☐ TODO | med (legal) | Especially: poe2wiki is **CC BY-NC** (non-commercial) — redistributing it in a paid product needs review/relicensing. Confirm poe2db, poe.ninja, Craft of Exile commercial terms. |
-| Privacy policy | ☐ TODO | low | State what's processed locally vs sent to the chosen AI provider. |
-| Sandboxed file writes | ◑ PARTIAL | low | All writes already go under `data_engine/`; formalize + document. |
+| Privacy policy | ✅ DONE 2026-10-04 | — | `docs/PRIVACY.md`: local vs provider processing, per-provider endpoints + exact payload (from `voice_engine.PROVIDERS` / `ai_respond`), retention, fully-local mode. Two `[OWNER CONFIRM]` items inline (clip retention cap, local-LLM option). |
+| Sandboxed file writes | ✅ DONE 2026-10-04 | — | `docs/SANDBOXED-WRITES.md` formalizes the `data_engine/` boundary (roots, CWD anchoring, `dir_database` override, user-pointed exceptions) + `tests/sandbox_write_checks.py` asserts every declared write root resolves under it. No runtime path guard yet — `[OWNER CONFIRM]` whether to promote the test helper into `core_engine`. |
 
 ### Dependency audit / re-lock (how it's done)
 ```

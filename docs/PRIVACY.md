@@ -1,6 +1,6 @@
 # Kalandra — Privacy Policy
 
-*Plain words, honestly stated. Last updated 2026-07-10 (v0.1.0-pre).*
+*Plain words, honestly stated. Last updated 2026-10-04 (verified against the code; see `core_engine/voice_engine.py` and `docs/SANDBOXED-WRITES.md`).*
 *This document describes what the app actually does today. It is not legal
 advice; before any commercial release it gets a professional review (see the
 gating table in `docs/ROADMAP.md`).*
@@ -71,6 +71,53 @@ of your questions to the AI provider *you* chose, under *your* account.
   websites the embedded browser tabs load (trade site, Craft of Exile,
   FilterBlade, poe.ninja) — those tabs are ordinary web views of *their*
   sites.
+
+## Which provider, which endpoint, and exactly what is sent
+
+The AI "brain" is chosen in Settings; the table is `PROVIDERS` in
+`core_engine/voice_engine.py` (L170–220). Nothing is sent until you save a
+key for that provider.
+
+| Provider | Endpoint | Transport |
+|---|---|---|
+| OpenAI | api.openai.com (SDK default) | `openai` SDK |
+| Anthropic | api.anthropic.com (SDK default) | `anthropic` SDK |
+| Google Gemini | generativelanguage.googleapis.com (SDK default) | `google-genai` SDK (falls back to legacy `google-generativeai`) |
+| DeepSeek | `https://api.deepseek.com` | `openai` SDK, base_url override |
+| Mistral | `https://api.mistral.ai/v1` | `openai` SDK, base_url override |
+| xAI (Grok) | `https://api.x.ai/v1` | `openai` SDK, base_url override |
+
+Per request (`VoiceEngine.ai_respond`, ~L368–430) the payload is: a fixed system
+prompt, your question text, and up to **12 context snippets** — the first is
+your loaded build summary (if any), the rest are matches from your local
+`localized_knowledge.db`. Every request has a hard **45 s timeout**
+(`AI_TIMEOUT`). Token counts come back and are kept **locally** for the
+budget display (`last_usage`); they are not sent anywhere.
+
+**One feature sends an image:** the Photo Scanner's AI-vision reader
+(`VoiceEngine.ai_read_image`, L536) base64-encodes the tooltip screenshot
+you chose and sends it to the same provider. With no key it returns `""`
+and the scanner falls back to offline OCR. No other screenshot, clip or
+recording is ever uploaded.
+
+## Retention
+
+- Local files under `data_engine/` stay until **you** delete them — there is
+  no automatic expiry. [OWNER CONFIRM] whether clips/snapshots get a cap.
+- Chat transcripts are only written if transcript logging is turned on.
+- What a provider keeps is governed by that provider's own policy under
+  your account; Kalandra has no copy and no visibility.
+
+## Running fully local
+
+Kalandra works with **no AI key at all**: voice transcription (Whisper),
+text-to-speech, the database, scraping, trackers, Filter Editor, Craft
+Hunter and PoB sim are all on-device. Without a key the orb replies
+"[AI brain offline] No API key set…" instead of calling out (`ai_respond`, L377–379). Leave `brain` on `none` / add no key
+and the only network traffic is the public game-data fetches above.
+There is no built-in local-LLM (Ollama / LM Studio) option today — the
+OpenAI-compatible `base_url` mechanism could point at one, but no such
+entry exists in `PROVIDERS`. [OWNER CONFIRM]
 
 ## Questions
 
