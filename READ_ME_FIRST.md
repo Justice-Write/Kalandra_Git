@@ -1,3 +1,11 @@
+# Test release 0.1.0-pre.2 (2026-10-30)
+
+See `docs/RELEASE-2026-10-30.md` for the current runtime-only package and safe
+per-user install procedure. `python main.py --safe-startup` skips automatic
+sync/game/clipboard watchers while retaining user-controlled tools. This is not
+a firewall. Personal data, databases, provider keys and backups are not bundled.
+The supported Windows/Python 3.12 install uses `requirements-lock.txt`.
+
 # Kalandra — Read Me First
 
 Kalandra is a desktop overlay and companion app for **Path of Exile 2**. A floating

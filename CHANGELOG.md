@@ -1,3 +1,11 @@
+## 2026-10-30 — 0.1.0-pre.2 test release
+
+- Runtime-only tracked package selection; no automatic database/user-backup intake or implicit old wizard binaries. Eight archive boundary tests.
+- Patched certifi/filelock pins; pip-audit zero findings, supported Windows installs use the lock.
+- Added safe startup and two tests to skip automatic network/game/clipboard activity during desktop verification.
+- Repaired time-sensitive economy fixtures and trailing roadmap padding. Existing 21 check suites and 293 stress checks pass.
+- Private recovery history stays outside the public source projection. Commercial/provider/game acceptance remains separate.
+
 # Changelog
 
 All notable changes to Kalandra are documented here.

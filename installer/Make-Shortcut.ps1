@@ -9,10 +9,15 @@
 # Everything here is per-user (HKCU + the user's own Start Menu/Desktop), so it
 # needs NO administrator rights. Run it again any time to repair the entries.
 
+param([switch]$SafeStartup)
+
 $ProjectRoot = Split-Path -Parent (Split-Path -Parent $MyInvocation.MyCommand.Path)
 
 # --- Resolve the silent Python launcher --------------------------------------
-$pyw = Join-Path $env:LOCALAPPDATA "Programs\Python\Python312\pythonw.exe"
+$pyw = Join-Path $ProjectRoot '.venv\Scripts\pythonw.exe'
+if (-not (Test-Path $pyw)) {
+    $pyw = Join-Path $env:LOCALAPPDATA "Programs\Python\Python312\pythonw.exe"
+}
 if (-not (Test-Path $pyw)) {
     $found = (Get-Command pythonw.exe -ErrorAction SilentlyContinue |
               Select-Object -First 1)
@@ -36,7 +41,10 @@ $ws = New-Object -ComObject WScript.Shell
 
 function New-KalandraShortcut([string]$LnkPath) {
     if (Test-Path $LnkPath) {
-        Remove-Item $LnkPath -Force -ErrorAction SilentlyContinue
+        $backupDir = Join-Path $ProjectRoot 'data_engine\shortcut-backups'
+        New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
+        $backupName = [IO.Path]::GetFileName($LnkPath) + '.' + [DateTime]::UtcNow.Ticks + '.lnk'
+        Copy-Item -LiteralPath $LnkPath -Destination (Join-Path $backupDir $backupName)
     }
     $parent = Split-Path -Parent $LnkPath
     if (-not (Test-Path $parent)) {
@@ -45,6 +53,7 @@ function New-KalandraShortcut([string]$LnkPath) {
     $s = $ws.CreateShortcut($LnkPath)
     $s.TargetPath       = $pyw
     $s.Arguments        = '"' + $mainPy + '"'
+    if ($SafeStartup) { $s.Arguments += ' --safe-startup' }
     $s.WorkingDirectory = $ProjectRoot
     if ($hasIco) { $s.IconLocation = "$ico,0" }
     $s.Description      = "Kalandra - Path of Exile 2 overlay companion"
@@ -79,7 +88,7 @@ try {
         InstallLocation = $ProjectRoot
         DisplayIcon     = $(if ($hasIco) { $ico } else { $pyw })
         UninstallString = $uninstCmd
-        URLInfoAbout    = "https://github.com/castleism/Kalandra_Git"
+        URLInfoAbout    = "https://github.com/Justice-Write/Kalandra_Git"
         NoModify        = 1
         NoRepair        = 1
     }

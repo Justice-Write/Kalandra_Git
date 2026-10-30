@@ -20,7 +20,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 
-def run_startup_checks():
+def run_startup_checks(online=True):
     """Date/time + database freshness. Never fatal — only informative."""
     print("=========================================================")
     print("            KALANDRA OVERLAY — STARTUP CHECKS")
@@ -44,7 +44,7 @@ def run_startup_checks():
         from core_engine.data_sources import FreshnessChecker
         fc = FreshnessChecker(db_handler=db, time_matrix=time_matrix,
                               logger=lambda c, m: print(f"[{c}] {m}"))
-        report = fc.run_startup_check(online=True)
+        report = fc.run_startup_check(online=online)
         print(f"[STARTUP] Last sync: {report['last_sync']}")
         print(f"[STARTUP] Stored version: {report['stored_version']} | "
               f"Live: {report.get('live_version', 'unknown')}")
@@ -74,8 +74,38 @@ def _pause_if_console():
         pass
 
 
+def configure_startup(overlay, safe=False, schedule=None, clipboard=None):
+    """Safe startup skips automatic network/game/clipboard activity.
+
+    On-demand features remain user-controlled; this is not a network firewall.
+    """
+    if safe:
+        overlay.game_watch_timer.stop()
+        overlay.death_watch_timer.stop()
+        if clipboard is None:
+            from PyQt6.QtWidgets import QApplication
+            clipboard = QApplication.clipboard()
+        try:
+            clipboard.dataChanged.disconnect(overlay._on_clipboard_item)
+        except (TypeError, RuntimeError):
+            pass
+        overlay.setWindowTitle(overlay.windowTitle() + ' (safe startup)')
+        return
+    if schedule is None:
+        from PyQt6.QtCore import QTimer
+        schedule = QTimer.singleShot
+    schedule(800, overlay.initial_sync)
+    schedule(1200, overlay.startup_freshness_check)
+    schedule(1600, overlay.startup_game_data_check)
+
+
 def main():
-    run_startup_checks()
+    safe_startup = '--safe-startup' in sys.argv
+    if safe_startup:
+        sys.argv.remove('--safe-startup')
+        print('[STARTUP] Safe startup: automatic sync, game/log watch and clipboard watch disabled.')
+    else:
+        run_startup_checks()
     try:
         from gui_overlay.mirror_window import (KalandraOverlayApp, PYQT_AVAILABLE,
                                                _install_crash_guard)
@@ -123,9 +153,7 @@ def main():
         app.setQuitOnLastWindowClosed(False)
         overlay = KalandraOverlayApp()
         overlay.show()
-        QTimer.singleShot(800, overlay.initial_sync)
-        QTimer.singleShot(1200, overlay.startup_freshness_check)
-        QTimer.singleShot(1600, overlay.startup_game_data_check)
+        configure_startup(overlay, safe=safe_startup)
         code = app.exec()
         print("\nKalandra overlay closed cleanly.")
         return code

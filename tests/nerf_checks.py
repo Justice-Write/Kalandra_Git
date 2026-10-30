@@ -111,6 +111,7 @@ guard("all-junk inputs", lambda: value_intuition(None, patches=[(None, None)],
 print("=== W4-06 wiring: DB feeds ===")
 import sqlite3
 import tempfile
+from datetime import date, timedelta
 
 check("version key orders point releases",
       _version_key("Version 0.2.1") > _version_key("0.2.0")
@@ -139,12 +140,17 @@ with tempfile.TemporaryDirectory() as td:
     con.execute("""CREATE TABLE economy_history(
         day TEXT NOT NULL, league TEXT NOT NULL, name TEXT NOT NULL,
         value REAL, volume REAL, PRIMARY KEY (day, league, name))""")
+    # The production feed intentionally uses a rolling 90-day window. Keep
+    # fixture dates recent, and retain one old point to verify it is excluded.
+    recent = [(date.today() - timedelta(days=days)).isoformat() for days in (10, 6, 2)]
+    old = (date.today() - timedelta(days=180)).isoformat()
     con.executemany("INSERT INTO economy_history VALUES (?,?,?,?,?)", [
-        ("2026-07-01", "Standard", "Divine Orb", 180.0, 10),
-        ("2026-07-05", "Standard", "Divine Orb", 150.0, 10),
-        ("2026-07-09", "Standard", "Divine Orb", 90.0, 10),
-        ("2026-07-09", "Standard", "Chaos Orb", 1.0, 10),
-        ("2026-07-09", "OtherLeague", "Divine Orb", 500.0, 10),
+        (old, "Standard", "Divine Orb", 999.0, 10),
+        (recent[0], "Standard", "Divine Orb", 180.0, 10),
+        (recent[1], "Standard", "Divine Orb", 150.0, 10),
+        (recent[2], "Standard", "Divine Orb", 90.0, 10),
+        (recent[2], "Standard", "Chaos Orb", 1.0, 10),
+        (recent[2], "OtherLeague", "Divine Orb", 500.0, 10),
     ])
     con.commit()
     con.close()

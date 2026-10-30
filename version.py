@@ -6,7 +6,7 @@ the dialogs, and the installer (which reads this file). COMPATIBILITY lists the
 dependency/resource revisions verified to work with THIS Kalandra revision.
 """
 
-KALANDRA_VERSION = "0.1.0-pre.1"          # pre-release revision
+KALANDRA_VERSION = "0.1.0-pre.2"          # privacy-safe packaging revision
 KALANDRA_CHANNEL = "pre-release"
 
 # Dependency / resource versions verified against this Kalandra revision.

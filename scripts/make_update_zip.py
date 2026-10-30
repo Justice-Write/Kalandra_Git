@@ -17,6 +17,7 @@ if _ROOT not in _sys.path:
 import os
 import sys
 import zipfile
+from scripts.package_policy import selected_runtime_files
 
 # Files worth shipping in a code update.
 CODE_EXT = {".py", ".lua", ".md", ".bat", ".txt"}
@@ -58,14 +59,10 @@ def main():
     out = sys.argv[1] if len(sys.argv) > 1 else "Kalandra_update.zip"
     n = 0
     with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
-        for dirpath, dirnames, filenames in os.walk(root):
-            dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
-            for fn in filenames:
-                full = os.path.join(dirpath, fn)
-                rel = os.path.relpath(full, root)
-                if want(rel):
-                    z.write(full, rel)
-                    n += 1
+        for rel in selected_runtime_files(root):
+            if want(rel):
+                z.write(os.path.join(root, rel), rel.replace('\\', '/'))
+                n += 1
     print(f"{out}: {n} files (user state excluded)")
     return 0
 

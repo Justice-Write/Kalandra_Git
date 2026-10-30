@@ -40,8 +40,8 @@ $Components = @(
 
     @{ Id="pip"; Name="Python packages (PyQt6, Whisper, AI SDKs, scraper)";
        Cat="Required"; Credit="Riverbank, SYSTRAN, OpenAI, Google + PyPI authors";
-       Verified="see requirements.txt (PyQt6>=6.7, faster-whisper>=1.0, ...)";
-       Install=@{Kind="terminal"; Cmd="{PY} -m pip install -r requirements.txt"};
+       Verified="audited Windows/Python 3.12 requirements-lock.txt";
+       Install=@{Kind="terminal"; Cmd="{PY} -m pip install -r requirements-lock.txt"};
        Check=@{Kind="pip"}; Account=@{Kind="none"}; Paths=@() }
 
     @{ Id="luajit"; Name="LuaJIT - Path of Building simulator engine";
@@ -505,10 +505,10 @@ foreach ($comp in $Components) {
 
                 if ($id -eq "pip") {
                     $py = PyQuoted
-                    $cmd = "$py -m pip install -r requirements.txt"
+                    $cmd = "$py -m pip install -r requirements-lock.txt"
                     if ($resDir -and (Test-Path $resDir) -and
                         (Get-ChildItem $resDir -Filter *.whl -ErrorAction SilentlyContinue)) {
-                        $cmd = "$py -m pip install --no-index --find-links ""$resDir"" -r requirements.txt"
+                        $cmd = "$py -m pip install --no-index --find-links ""$resDir"" -r requirements-lock.txt"
                         Log "Offline: installing packages from bundled wheels."
                     }
                     Run-Background "Python packages (pip)" $cmd $t.Comp $t.Status $this

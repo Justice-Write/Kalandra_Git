@@ -17,6 +17,12 @@ import re
 import sys
 import time
 import zipfile
+from pathlib import Path
+
+try:
+    from .package_policy import selected_runtime_files
+except ImportError:
+    from package_policy import selected_runtime_files
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.chdir(_ROOT)
@@ -30,17 +36,9 @@ KEY_PATTERNS = re.compile(
     rb"sk-[A-Za-z0-9]{20,}|AIza[A-Za-z0-9_-]{30,}|ghp_[A-Za-z0-9]{30,}"
     rb"|AKIA[A-Z0-9]{16}|xoxb-[A-Za-z0-9-]{20,}")
 
-# BUNDLED DATABASE (2026-07-05): the scraped knowledge DB is public game
-# data (poe2db/wiki/poe.ninja), no secrets - ship the freshest copy found so
-# a new install already knows the game before its first scrape. The
-# installer auto-imports it from Additional Resources\Database.
-DB_SOURCES = (
-    os.path.join("data_engine", "localized_knowledge.db"),
-    os.path.join("Additional Resources", "Database", "localized_knowledge.db"),
-    os.path.join(os.path.expanduser("~"), "Documents", "Kalandra-Data",
-                 "localized_knowledge.db"),   # the uninstaller's keep-spot
-)
-DB_CACHES = ("poe2db_cache.sqlite", "poeninja_cache.sqlite")
+# User/runtime databases are excluded, including copies saved by uninstallers.
+# A future distributable reference dataset needs separate provenance/licensing
+# review; no filename or timestamp can establish that it contains no user data.
 
 # PYINSTALLER ONEDIR (2026-07-05): the setup wizard exe folder is packed
 # VERBATIM. Its _internal\ holds a file literally named base_library.zip;
@@ -51,6 +49,9 @@ ONEDIR = "Kalandra-Setup"
 
 def pack_onedir(z):
     """-> files packed from the exe folder (0 + note if it wasn't built)."""
+    if os.environ.get('KALANDRA_INCLUDE_WIZARD') != '1':
+        print('  Wizard binaries omitted; Setup.bat uses the PowerShell fallback.')
+        return 0
     d = os.path.join(_ROOT, ONEDIR)
     if not os.path.isdir(d):
         print("  NOTE: no Kalandra-Setup\\ exe folder found - package ships "
@@ -60,6 +61,9 @@ def pack_onedir(z):
     for root, dirs, files in os.walk(d):
         for f in files:
             q = os.path.join(root, f)
+            source = Path(q)
+            if source.is_symlink() or not source.resolve().is_relative_to(Path(_ROOT).resolve()):
+                raise ValueError('Linked wizard input is not allowed')
             z.write(q, os.path.join("Kalandra", os.path.relpath(q, _ROOT)))
             n += 1
     print(f"  setup wizard exe packed VERBATIM ({n} files, "
@@ -68,46 +72,17 @@ def pack_onedir(z):
 
 
 def bundle_db(z):
-    """Pack the newest localized_knowledge.db (+ its caches) into the zip at
-    Kalandra/Additional Resources/Database/. -> files bundled (0 if none)."""
-    best = None
-    for cand in DB_SOURCES:
-        if os.path.isfile(cand) and (
-                best is None
-                or os.path.getmtime(cand) > os.path.getmtime(best)):
-            best = cand
-    if not best:
-        print("  NOTE: no localized_knowledge.db found anywhere - the package "
-              "ships without a bundled database.")
-        return 0
-    arc = os.path.join("Kalandra", "Additional Resources", "Database")
-    z.write(best, os.path.join(arc, "localized_knowledge.db"))
-    age_h = (time.time() - os.path.getmtime(best)) / 3600.0
-    print(f"  bundled DB: {best} ({os.path.getsize(best) / 1e6:.1f} MB, "
-          f"~{age_h:.0f}h old)")
-    n = 1
-    for c in DB_CACHES:
-        q = os.path.join(os.path.dirname(best), c)
-        if os.path.isfile(q):
-            z.write(q, os.path.join(arc, c))
-            n += 1
-    return n
+    """Compatibility entry point: never search or read user database storage."""
+    print('  User/runtime databases and cache backups are not bundled.')
+    return 0
 
 
 def build(out_path):
     n = 0
     with zipfile.ZipFile(out_path, "w", zipfile.ZIP_DEFLATED) as z:
-        for root, dirs, files in os.walk(_ROOT):
-            dirs[:] = [d for d in dirs if d not in EXCLUDE_DIRS
-                       and not (root == _ROOT and d == ONEDIR)]
-            for f in files:
-                if f in EXCLUDE_FILES or f.lower().endswith(EXCLUDE_EXTS):
-                    continue
-                p = os.path.join(root, f)
-                if os.path.abspath(p) == os.path.abspath(out_path):
-                    continue          # never swallow the archive being built
-                z.write(p, os.path.join("Kalandra", os.path.relpath(p, _ROOT)))
-                n += 1
+        for relative in selected_runtime_files(_ROOT):
+            z.write(os.path.join(_ROOT, relative), 'Kalandra/' + relative.replace('\\', '/'))
+            n += 1
         n += bundle_db(z)
         n += pack_onedir(z)
     return n
@@ -117,10 +92,12 @@ def scan(out_path):
     hits = []
     with zipfile.ZipFile(out_path) as z:
         for name in z.namelist():
-            if name.lower().endswith((".db", ".sqlite")):
-                continue   # bundled scraped-game-data DB: binary, ours-key-free
-            if name.startswith("Kalandra/" + ONEDIR + "/"):
-                continue   # our own exe's binaries: key-free, avoids false hits
+            parts = name.replace('\\', '/').lower().split('/')
+            if ('data_engine' in parts or '.git' in parts or '.venv' in parts
+                    or name.lower().endswith(('.db', '.sqlite', '.sqlite3', '.jks', '.keystore', '.p12', '.pfx'))
+                    or any(part.startswith('.env') for part in parts)):
+                hits.append(name)
+                continue
             try:
                 data = z.read(name)
             except Exception:
@@ -154,7 +131,9 @@ def main():
     print("Scanning the archive for key-shaped strings ...")
     hits = scan(out)
     if hits:
-        os.remove(out)
+        quarantine = Path(out).resolve().parent / '_to_delete'
+        quarantine.mkdir(exist_ok=True)
+        Path(out).replace(quarantine / (Path(out).name + '.' + str(time.time_ns()) + '.rejected'))
         print("REFUSED: possible secrets found in:")
         for h in hits:
             print("  -", h)

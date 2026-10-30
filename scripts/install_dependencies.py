@@ -156,9 +156,14 @@ def _ask_yes(prompt, default=True):
 # --------------------------------------------------------------------------- #
 def step_pip(cfg):
     log("\n=== Python requirements (pip) ===")
-    req = os.path.join(ROOT, "requirements.txt")
+    # The supported Windows/CPython 3.12 release uses its audited exact graph.
+    # Other Python versions keep the documented wheel-compatible floors.
+    requirements_name = ('requirements-lock.txt'
+                         if os.name == 'nt' and sys.version_info[:2] == (3, 12)
+                         else 'requirements.txt')
+    req = os.path.join(ROOT, requirements_name)
     if not os.path.exists(req):
-        log("  requirements.txt not found, skipping.")
+        log(f"  {requirements_name} not found, skipping.")
         return
     # Install into THIS python's own site-packages (no --user) so the same
     # interpreter the launchers use always sees them. Upgrade pip first.
