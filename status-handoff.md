@@ -23,7 +23,7 @@ Any LLM or person working in this repo follows these rules. No exceptions for "s
 
 ## 1. In progress
 
-- Release-round lane: publish the reviewed desktop source and runtime-only package; verify per-user installation. Other model tasks must preserve original working copies.
+None in this completed release lane. Preserve original working copies and their separate private recovery history.
 
 ## 2. Product and current release
 
@@ -47,7 +47,7 @@ The documented Windows registration is per-user (HKCU and user shortcuts). The p
 
 ## 6. Next steps and owner gates
 
-- Finish source/package publication and per-user desktop readback in this lane; retain the exact artifact hash and source commit.
+- Source/package publication and per-user desktop readback are complete for 0.1.0-pre.2. Retain immutable source 3e3a477 and release artifact receipts; later documentation commits do not change the application payload.
 - Physical game interaction, live provider/OAuth acceptance, microphone/capture tests and optional external tools require their documented owner setup and separate checks. No live user/game database is modified during this release.
 - Commercial ToS/licensing review, code signing, GGG application registration, clip-retention/local-LLM policy choices and requested artwork/screenshots remain owner gates. Do not infer them from a general release request.
 - Continue the existing feature roadmap from docs/ROADMAP.md; partial feature rows are not certified complete by packaging or unit tests.
@@ -59,3 +59,7 @@ Use Python 3.12 and the Windows requirements-lock.txt; run tests/stress_test.py 
 ## 8. Work log
 
 - 2026-10-30 Codex release-round: closed runtime-package privacy holes, patched dependency pins, added safe-startup verification, repaired expired test fixtures and roadmap padding, and split the private recovery handoff from public source. Original branches and working trees remain preserved. Exact publication/install results live in the release receipt.
+
+## Completed per-user release — 2026-10-30
+
+Source 3e3a477 is published on main and the versioned v0.1.0-pre.2 release; installer/dependency CI passes and open Dependabot alerts are zero. Fresh per-user install, pinned dependency consistency, HKCU and shortcuts verified. Native overlay rendered in safe startup and exited cleanly; no Python network attempts and the three inventoried original development-state files are unchanged. Runtime-only local ZIP hash b0f9e1d69b8d0289f79cf47a971902797439dbdf5441004c3d57bdc9a75a7d9e. See release docs for limits. No raw operator/device/user-data receipt is committed.

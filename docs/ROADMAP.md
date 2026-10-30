@@ -8,7 +8,7 @@
 - [x] Provide safe startup without automatic sync, game/log or clipboard watchers.
 - [x] Repair time-sensitive test fixtures while retaining the 90-day exclusion behavior.
 - [x] Repair trailing NUL padding without removing roadmap content.
-- [ ] Publish the exact reviewed source/package and verify per-user desktop installation.
+- [x] Published source 3e3a477 and immutable v0.1.0-pre.2 installer/ZIP; clean per-user install and native safe-startup window verified.
 
 These release checks do not certify the unfinished feature-wave rows below,
 commercial licensing, live providers, physical game capture, or OAuth acceptance.
