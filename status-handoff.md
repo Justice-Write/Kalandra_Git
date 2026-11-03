@@ -63,3 +63,17 @@ Use Python 3.12 and the Windows requirements-lock.txt; run tests/stress_test.py 
 ## Completed per-user release — 2026-10-30
 
 Source 3e3a477 is published on main and the versioned v0.1.0-pre.2 release; installer/dependency CI passes and open Dependabot alerts are zero. Fresh per-user install, pinned dependency consistency, HKCU and shortcuts verified. Native overlay rendered in safe startup and exited cleanly; no Python network attempts and the three inventoried original development-state files are unchanged. Runtime-only local ZIP hash b0f9e1d69b8d0289f79cf47a971902797439dbdf5441004c3d57bdc9a75a7d9e. See release docs for limits. No raw operator/device/user-data receipt is committed.
+
+## Security qualification and source backup — 2026-11-02
+
+### Current source checkpoint
+Owner explicitly authorized testing, coherent commits and pushing ready isolated feature branches. No default-branch merge, deployment, device install, OS trust change, provider or content action. Source baseline f654013c9bac6d768a1cc262a7bf1d1c8fadc09e. Candidate branch codex/security-runtime-20261102-kalandra.
+
+### Verification
+Python3.12.16:4security guard tests and runtime-only CLI pass. Patched pyasn1/certifi validation overlay passes benign DER/dependency constraints; final75package OSV audit0. Installed app remains Python3.12.10/pyasn1 0.6.4, while installed pip26.2.2/certifi2026.10.19 already meet their CA floors.
+
+### Installed apps / exact owner actions
+Installed Kalandra0.1.0-pre.2 still requires a data-preserving authorized runtime/dependency update: Python3.12.10 ->supported fixed patch and pyasn1 0.6.4 ->0.6.5+. Existing pip/certifi do not need emergency CA remediation. Update/package/install not performed here; preserve user state/keychain; no gameplay/capture/mic/provider actions.
+
+### Work log
+2026-11-02 Codex01a130c5-3018: completed scoped qualification on patched portable toolchains; original owner checkouts/index preserved. Runtime binaries, downloaded test wheels, QA artifacts and raw receipts stay outside source. Source commit/push follow the ready feature branch; installed and deployed copies remain unchanged. No active writer remains after the commit.
